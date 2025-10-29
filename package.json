@@ -1,0 +1,15 @@
+{
+    "name": "authify",
+    "version": "0.1.0",
+    "private": true,
+    "description": "Full-stack auth demo: signup/signin and protected dashboard.",
+    "workspaces": [
+        "frontend",
+        "backend"
+    ],
+    "scripts": {
+        "dev": "npm run dev --workspaces",
+        "dev:frontend": "npm --workspace frontend run dev",
+        "dev:backend": "npm --workspace backend run dev"
+    }
+}
