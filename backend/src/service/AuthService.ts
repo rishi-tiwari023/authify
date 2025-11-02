@@ -1,5 +1,6 @@
 import { UserRepository } from '../repository/UserRepository';
 import { User, UserRole } from '../model/User';
+import * as bcrypt from 'bcrypt';
 
 export interface SignupData {
   name: string;
@@ -14,6 +15,7 @@ export interface LoginData {
 
 export class AuthService {
   private userRepository: UserRepository;
+  private readonly saltRounds = 10;
 
   constructor() {
     this.userRepository = new UserRepository();
@@ -25,11 +27,12 @@ export class AuthService {
       throw new Error('Email already registered');
     }
 
-    // TODO: Hash password before saving
+    // Hash password before saving
+    const hashedPassword = await bcrypt.hash(data.password, this.saltRounds);
     const user = await this.userRepository.create({
       name: data.name,
       email: data.email,
-      password: data.password, // Temporary - needs hashing
+      password: hashedPassword,
       role: UserRole.USER,
     });
 
@@ -42,8 +45,9 @@ export class AuthService {
       return null;
     }
 
-    // TODO: Verify password hash
-    if (user.password !== data.password) {
+    // Verify password hash
+    const isPasswordValid = await bcrypt.compare(data.password, user.password);
+    if (!isPasswordValid) {
       return null;
     }
 
