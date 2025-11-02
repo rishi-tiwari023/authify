@@ -1,5 +1,6 @@
 import express from 'express';
 import { initializeDatabase } from './config/data-source';
+import authRoutes from './routes/authRoutes';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -9,6 +10,8 @@ app.use(express.json());
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', message: 'Server is running' });
 });
+
+app.use('/api/auth', authRoutes);
 
 async function bootstrap() {
   await initializeDatabase();
