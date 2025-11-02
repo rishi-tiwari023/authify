@@ -1,11 +1,14 @@
 import { Request, Response } from 'express';
 import { AuthService } from '../service/AuthService';
+import jwt from 'jsonwebtoken';
 
 export class AuthController {
   private authService: AuthService;
+  private readonly jwtSecret: string;
 
   constructor() {
     this.authService = new AuthService();
+    this.jwtSecret = process.env.JWT_SECRET || 'my-secret-key-change-in-production';
   }
 
   async signup(req: Request, res: Response): Promise<void> {
@@ -39,8 +42,17 @@ export class AuthController {
         return;
       }
 
-      // TODO: Generate JWT token
-      res.json({ user: { id: user.id, name: user.name, email: user.email } });
+      // Generate JWT token
+      const token = jwt.sign(
+        { id: user.id, email: user.email, role: user.role },
+        this.jwtSecret,
+        { expiresIn: '1h' }
+      );
+
+      res.json({
+        user: { id: user.id, name: user.name, email: user.email },
+        token,
+      });
     } catch (error) {
       res.status(500).json({ error: 'Login failed' });
     }
