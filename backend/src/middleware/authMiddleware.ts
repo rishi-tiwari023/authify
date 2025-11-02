@@ -1,16 +1,31 @@
 import { Request, Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
 
-// Temporary middleware - will be replaced with JWT verification
-export function authMiddleware(req: Request, res: Response, next: NextFunction): void {
-  // TODO: Extract and verify JWT token from Authorization header
-  const token = req.headers.authorization;
+export interface AuthRequest extends Request {
+  user?: {
+    id: string;
+    email: string;
+    role: string;
+  };
+}
 
-  if (!token) {
+export function authMiddleware(req: AuthRequest, res: Response, next: NextFunction): void {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
     res.status(401).json({ error: 'Authentication required' });
     return;
   }
 
-  // Placeholder: token validation will be implemented later
-  next();
+  const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+  const jwtSecret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+
+  try {
+    const decoded = jwt.verify(token, jwtSecret) as { id: string; email: string; role: string };
+    req.user = decoded;
+    next();
+  } catch (error) {
+    res.status(401).json({ error: 'Invalid or expired token' });
+  }
 }
 
