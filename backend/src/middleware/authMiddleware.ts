@@ -29,3 +29,18 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
   }
 }
 
+export function requireRole(allowed: string | string[]) {
+  const allowedRoles = Array.isArray(allowed) ? allowed : [allowed];
+  return (req: AuthRequest, res: Response, next: NextFunction): void => {
+    if (!req.user) {
+      res.status(401).json({ error: 'Authentication required' });
+      return;
+    }
+    if (!allowedRoles.includes(req.user.role)) {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+    next();
+  };
+}
+
