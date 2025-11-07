@@ -3,6 +3,7 @@ import { AuthService } from '../service/AuthService';
 import jwt from 'jsonwebtoken';
 import { AuthRequest } from '../middleware/authMiddleware';
 import { UserRepository } from '../repository/UserRepository';
+import { ValidationError } from '../utils/errors';
 
 export class AuthController {
   private authService: AuthService;
@@ -27,6 +28,10 @@ export class AuthController {
       const user = await this.authService.signup({ name, email, password });
       res.status(201).json({ user: { id: user.id, name: user.name, email: user.email } });
     } catch (error) {
+      if (error instanceof ValidationError) {
+        res.status(error.statusCode).json({ error: error.message });
+        return;
+      }
       res.status(400).json({ error: (error as Error).message });
     }
   }
@@ -58,6 +63,10 @@ export class AuthController {
         token,
       });
     } catch (error) {
+      if (error instanceof ValidationError) {
+        res.status(error.statusCode).json({ error: error.message });
+        return;
+      }
       res.status(500).json({ error: 'Login failed' });
     }
   }
