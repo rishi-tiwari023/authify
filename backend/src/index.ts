@@ -1,6 +1,8 @@
 import express from 'express';
 import { initializeDatabase } from './config/data-source';
 import authRoutes from './routes/authRoutes';
+import userRoutes from './routes/userRoutes';
+import { errorHandler } from './utils/errors';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -12,6 +14,10 @@ app.get('/health', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+app.use('/api/user', userRoutes);
+
+// Error handling middleware (must be last)
+app.use(errorHandler);
 
 async function bootstrap() {
   await initializeDatabase();
