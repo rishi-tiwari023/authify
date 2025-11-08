@@ -9,10 +9,47 @@ const authController = new AuthController();
 // Apply rate limiting to auth endpoints
 const authRateLimit = rateLimitMiddleware(5, 60000); // 5 requests per minute
 
+/**
+ * @route POST /api/auth/signup
+ * @desc Register a new user
+ * @access Public
+ * @body {string} name - User's full name
+ * @body {string} email - User's email address
+ * @body {string} password - User's password (min 8 chars, must contain uppercase, lowercase, and number)
+ */
 router.post('/signup', authRateLimit, (req, res) => authController.signup(req, res));
+
+/**
+ * @route POST /api/auth/login
+ * @desc Authenticate user and return JWT token
+ * @access Public
+ * @body {string} email - User's email address
+ * @body {string} password - User's password
+ */
 router.post('/login', authRateLimit, (req, res) => authController.login(req, res));
+
+/**
+ * @route POST /api/auth/refresh
+ * @desc Refresh JWT token
+ * @access Private
+ * @header Authorization: Bearer <token>
+ */
 router.post('/refresh', authMiddleware, (req, res) => authController.refreshToken(req as any, res));
+
+/**
+ * @route GET /api/auth/me
+ * @desc Get current authenticated user's information
+ * @access Private
+ * @header Authorization: Bearer <token>
+ */
 router.get('/me', authMiddleware, (req, res) => authController.me(req as any, res));
+
+/**
+ * @route GET /api/auth/users
+ * @desc Get all users (Admin only)
+ * @access Private (Admin)
+ * @header Authorization: Bearer <token>
+ */
 router.get('/users', authMiddleware, requireRole('ADMIN'), (req, res) => authController.listUsers(req, res));
 
 export default router;
