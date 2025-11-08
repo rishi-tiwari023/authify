@@ -88,5 +88,34 @@ export class AuthController {
     const users = await this.userRepository.findAll();
     res.json(users.map(u => ({ id: u.id, name: u.name, email: u.email, role: u.role })));
   }
+
+  async refreshToken(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: 'Authentication required' });
+        return;
+      }
+
+      const user = await this.userRepository.findById(req.user.id);
+      if (!user) {
+        res.status(404).json({ error: 'User not found' });
+        return;
+      }
+
+      // Generate new JWT token
+      const token = jwt.sign(
+        { id: user.id, email: user.email, role: user.role },
+        this.jwtSecret,
+        { expiresIn: '1h' }
+      );
+
+      res.json({
+        token,
+        user: { id: user.id, name: user.name, email: user.email },
+      });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to refresh token' });
+    }
+  }
 }
 
