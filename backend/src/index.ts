@@ -3,10 +3,12 @@ import { initializeDatabase } from './config/data-source';
 import authRoutes from './routes/authRoutes';
 import userRoutes from './routes/userRoutes';
 import { errorHandler } from './utils/errors';
+import { corsMiddleware } from './middleware/corsMiddleware';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.use(corsMiddleware);
 app.use(express.json());
 
 app.get('/health', (req, res) => {
