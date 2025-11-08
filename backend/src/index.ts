@@ -1,5 +1,5 @@
 import express from 'express';
-import { initializeDatabase } from './config/data-source';
+import { initializeDatabase, AppDataSource } from './config/data-source';
 import authRoutes from './routes/authRoutes';
 import userRoutes from './routes/userRoutes';
 import { errorHandler } from './utils/errors';
@@ -13,8 +13,22 @@ app.use(corsMiddleware);
 app.use(loggerMiddleware);
 app.use(express.json());
 
-app.get('/health', (req, res) => {
-  res.status(200).json({ status: 'ok', message: 'Server is running' });
+app.get('/health', async (req, res) => {
+  try {
+    const dbStatus = AppDataSource.isInitialized ? 'connected' : 'disconnected';
+    res.status(200).json({
+      status: 'ok',
+      message: 'Server is running',
+      database: dbStatus,
+      timestamp: new Date().toISOString(),
+    });
+  } catch (error) {
+    res.status(503).json({
+      status: 'error',
+      message: 'Health check failed',
+      database: 'error',
+    });
+  }
 });
 
 app.use('/api/auth', authRoutes);
