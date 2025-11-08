@@ -34,6 +34,14 @@ app.get('/health', async (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
 
+// 404 handler for unknown routes
+app.use((req, res) => {
+  res.status(404).json({
+    error: 'Not Found',
+    message: `Route ${req.method} ${req.path} not found`,
+  });
+});
+
 // Error handling middleware (must be last)
 app.use(errorHandler);
 
