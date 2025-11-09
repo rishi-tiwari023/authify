@@ -52,5 +52,22 @@ router.get('/me', authMiddleware, (req, res) => authController.me(req as any, re
  */
 router.get('/users', authMiddleware, requireRole('ADMIN'), (req, res) => authController.listUsers(req, res));
 
+/**
+ * @route POST /api/auth/forgot-password
+ * @desc Request password reset token
+ * @access Public
+ * @body {string} email - User's email address
+ */
+router.post('/forgot-password', authRateLimit, (req, res) => authController.forgotPassword(req, res));
+
+/**
+ * @route POST /api/auth/reset-password
+ * @desc Reset password using token
+ * @access Public
+ * @body {string} token - Password reset token
+ * @body {string} newPassword - New password (min 8 chars, must contain uppercase, lowercase, and number)
+ */
+router.post('/reset-password', authRateLimit, (req, res) => authController.resetPassword(req, res));
+
 export default router;
 
