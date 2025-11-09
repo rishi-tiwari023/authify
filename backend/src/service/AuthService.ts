@@ -1,8 +1,11 @@
 import { UserRepository } from '../repository/UserRepository';
 import { User, UserRole } from '../model/User';
 import * as bcrypt from 'bcrypt';
-import { ValidationError } from '../utils/errors';
+import { ValidationError, NotFoundError } from '../utils/errors';
 import { isValidEmail, isValidPassword, validateName } from '../utils/validation';
+import { PasswordResetTokenRepository } from '../repository/PasswordResetTokenRepository';
+import { PasswordResetToken } from '../model/PasswordResetToken';
+import * as crypto from 'crypto';
 
 export interface SignupData {
   name: string;
@@ -17,10 +20,12 @@ export interface LoginData {
 
 export class AuthService {
   private userRepository: UserRepository;
+  private passwordResetTokenRepository: PasswordResetTokenRepository;
   private readonly saltRounds = 10;
 
   constructor() {
     this.userRepository = new UserRepository();
+    this.passwordResetTokenRepository = new PasswordResetTokenRepository();
   }
 
   async signup(data: SignupData): Promise<User> {
@@ -75,6 +80,62 @@ export class AuthService {
     }
 
     return user;
+  }
+
+  async requestPasswordReset(email: string): Promise<PasswordResetToken> {
+    if (!isValidEmail(email)) {
+      throw new ValidationError('Invalid email format');
+    }
+
+    const user = await this.userRepository.findByEmail(email.toLowerCase().trim());
+    if (!user) {
+      // Don't reveal if email exists or not for security
+      throw new NotFoundError('If the email exists, a password reset link has been sent');
+    }
+
+    // Delete any existing reset tokens for this user
+    await this.passwordResetTokenRepository.deleteByUserId(user.id);
+
+    // Generate secure random token
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 1); // Token expires in 1 hour
+
+    const resetToken = await this.passwordResetTokenRepository.create({
+      token,
+      userId: user.id,
+      expiresAt,
+      used: false,
+    });
+
+    return resetToken;
+  }
+
+  async resetPassword(token: string, newPassword: string): Promise<void> {
+    const passwordValidation = isValidPassword(newPassword);
+    if (!passwordValidation.valid) {
+      throw new ValidationError(passwordValidation.error!);
+    }
+
+    const resetToken = await this.passwordResetTokenRepository.findByToken(token);
+    if (!resetToken) {
+      throw new ValidationError('Invalid or expired reset token');
+    }
+
+    if (resetToken.used) {
+      throw new ValidationError('Reset token has already been used');
+    }
+
+    if (resetToken.expiresAt < new Date()) {
+      throw new ValidationError('Reset token has expired');
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, this.saltRounds);
+    await this.userRepository.update(resetToken.userId, { password: hashedPassword });
+
+    // Mark token as used
+    await this.passwordResetTokenRepository.markAsUsed(resetToken.id);
   }
 }
 
