@@ -3,7 +3,7 @@ import { AuthService } from '../service/AuthService';
 import jwt from 'jsonwebtoken';
 import { AuthRequest } from '../middleware/authMiddleware';
 import { UserRepository } from '../repository/UserRepository';
-import { ValidationError } from '../utils/errors';
+import { ValidationError, NotFoundError } from '../utils/errors';
 
 export class AuthController {
   private authService: AuthService;
@@ -115,6 +115,53 @@ export class AuthController {
       });
     } catch (error) {
       res.status(500).json({ error: 'Failed to refresh token' });
+    }
+  }
+
+  async forgotPassword(req: Request, res: Response): Promise<void> {
+    try {
+      const { email } = req.body;
+
+      if (!email) {
+        res.status(400).json({ error: 'Email is required' });
+        return;
+      }
+
+      await this.authService.requestPasswordReset(email);
+      
+      // Always return success message for security (don't reveal if email exists)
+      res.json({
+        message: 'If the email exists, a password reset link has been sent',
+      });
+    } catch (error) {
+      if (error instanceof ValidationError || error instanceof NotFoundError) {
+        // Still return success message even if email doesn't exist (security best practice)
+        res.json({
+          message: 'If the email exists, a password reset link has been sent',
+        });
+        return;
+      }
+      res.status(500).json({ error: 'Failed to process password reset request' });
+    }
+  }
+
+  async resetPassword(req: Request, res: Response): Promise<void> {
+    try {
+      const { token, newPassword } = req.body;
+
+      if (!token || !newPassword) {
+        res.status(400).json({ error: 'Token and new password are required' });
+        return;
+      }
+
+      await this.authService.resetPassword(token, newPassword);
+      res.json({ message: 'Password reset successfully' });
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        res.status(error.statusCode).json({ error: error.message });
+        return;
+      }
+      res.status(500).json({ error: 'Failed to reset password' });
     }
   }
 }
