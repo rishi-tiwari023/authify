@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, BeforeInsert, BeforeUpdate } from 'typeorm';
 
 export enum UserRole {
   USER = 'USER',
@@ -30,6 +30,31 @@ export class User {
 
   @UpdateDateColumn({ type: 'timestamp with time zone' })
   updatedAt!: Date;
+
+  @BeforeInsert()
+  private handleBeforeInsert(): void {
+    this.normalizeFields();
+  }
+
+  @BeforeUpdate()
+  private handleBeforeUpdate(): void {
+    this.normalizeFields();
+  }
+
+  private normalizeFields(): void {
+    if (this.name) {
+      this.name = this.name.trim();
+    }
+
+    if (this.email) {
+      this.email = this.email.trim().toLowerCase();
+    }
+
+    if (typeof this.profileUrl === 'string') {
+      const normalizedProfileUrl = this.profileUrl.trim();
+      this.profileUrl = normalizedProfileUrl.length > 0 ? normalizedProfileUrl : null;
+    }
+  }
 }
 
 
