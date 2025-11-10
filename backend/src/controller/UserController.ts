@@ -19,7 +19,7 @@ export class UserController {
       }
 
       const user = await this.userService.getUserById(req.user.id);
-      res.json(user.toSafeJSON());
+      res.json(user);
     } catch (error) {
       if (error instanceof ValidationError) {
         res.status(error.statusCode).json({ error: error.message });
@@ -43,7 +43,7 @@ export class UserController {
         profileUrl,
       });
 
-      res.json(updatedUser.toSafeJSON());
+      res.json(updatedUser);
     } catch (error) {
       if (error instanceof ValidationError) {
         res.status(error.statusCode).json({ error: error.message });

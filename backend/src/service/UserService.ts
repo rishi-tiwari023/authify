@@ -1,5 +1,5 @@
 import { UserRepository } from '../repository/UserRepository';
-import { User } from '../model/User';
+import { SafeUser, User } from '../model/User';
 import * as bcrypt from 'bcrypt';
 import { NotFoundError, ValidationError, UnauthorizedError } from '../utils/errors';
 import { isValidEmail, validateName } from '../utils/validation';
@@ -23,7 +23,7 @@ export class UserService {
     this.userRepository = new UserRepository();
   }
 
-  async updateProfile(userId: string, data: UpdateProfileData): Promise<User> {
+  async updateProfile(userId: string, data: UpdateProfileData): Promise<SafeUser> {
     const user = await this.userRepository.findById(userId);
     if (!user) {
       throw new NotFoundError('User not found');
@@ -59,7 +59,7 @@ export class UserService {
       throw new NotFoundError('User not found');
     }
 
-    return updatedUser;
+    return updatedUser.toSafeJSON();
   }
 
   async changePassword(userId: string, data: ChangePasswordData): Promise<void> {
@@ -79,12 +79,12 @@ export class UserService {
     await this.userRepository.update(userId, { password: hashedPassword });
   }
 
-  async getUserById(userId: string): Promise<User> {
+  async getUserById(userId: string): Promise<SafeUser> {
     const user = await this.userRepository.findById(userId);
     if (!user) {
       throw new NotFoundError('User not found');
     }
-    return user;
+    return user.toSafeJSON();
   }
 
   async deleteUser(userId: string): Promise<void> {
