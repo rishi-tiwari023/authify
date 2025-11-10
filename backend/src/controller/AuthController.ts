@@ -26,7 +26,7 @@ export class AuthController {
       }
 
       const user = await this.authService.signup({ name, email, password });
-      res.status(201).json({ user: { id: user.id, name: user.name, email: user.email } });
+      res.status(201).json({ user: user.toSafeJSON() });
     } catch (error) {
       if (error instanceof ValidationError) {
         res.status(error.statusCode).json({ error: error.message });
@@ -59,7 +59,7 @@ export class AuthController {
       );
 
       res.json({
-        user: { id: user.id, name: user.name, email: user.email },
+        user: user.toSafeJSON(),
         token,
       });
     } catch (error) {
@@ -81,12 +81,12 @@ export class AuthController {
       res.status(404).json({ error: 'User not found' });
       return;
     }
-    res.json({ id: user.id, name: user.name, email: user.email, role: user.role });
+    res.json(user.toSafeJSON());
   }
 
   async listUsers(_req: Request, res: Response): Promise<void> {
     const users = await this.userRepository.findAll();
-    res.json(users.map(u => ({ id: u.id, name: u.name, email: u.email, role: u.role })));
+    res.json(users.map(u => u.toSafeJSON()));
   }
 
   async refreshToken(req: AuthRequest, res: Response): Promise<void> {
@@ -111,7 +111,7 @@ export class AuthController {
 
       res.json({
         token,
-        user: { id: user.id, name: user.name, email: user.email },
+        user: user.toSafeJSON(),
       });
     } catch (error) {
       res.status(500).json({ error: 'Failed to refresh token' });

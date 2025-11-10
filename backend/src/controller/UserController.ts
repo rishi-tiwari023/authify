@@ -19,14 +19,7 @@ export class UserController {
       }
 
       const user = await this.userService.getUserById(req.user.id);
-      res.json({
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        profileUrl: user.profileUrl,
-        createdAt: user.createdAt,
-      });
+      res.json(user.toSafeJSON());
     } catch (error) {
       if (error instanceof ValidationError) {
         res.status(error.statusCode).json({ error: error.message });
@@ -50,13 +43,7 @@ export class UserController {
         profileUrl,
       });
 
-      res.json({
-        id: updatedUser.id,
-        name: updatedUser.name,
-        email: updatedUser.email,
-        role: updatedUser.role,
-        profileUrl: updatedUser.profileUrl,
-      });
+      res.json(updatedUser.toSafeJSON());
     } catch (error) {
       if (error instanceof ValidationError) {
         res.status(error.statusCode).json({ error: error.message });
