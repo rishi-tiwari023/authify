@@ -5,6 +5,16 @@ export enum UserRole {
   ADMIN = 'ADMIN',
 }
 
+export interface SafeUser {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  profileUrl: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 @Entity({ name: 'users' })
 export class User {
   @PrimaryGeneratedColumn('uuid')
@@ -54,6 +64,18 @@ export class User {
       const normalizedProfileUrl = this.profileUrl.trim();
       this.profileUrl = normalizedProfileUrl.length > 0 ? normalizedProfileUrl : null;
     }
+  }
+
+  toSafeJSON(): SafeUser {
+    return {
+      id: this.id,
+      name: this.name,
+      email: this.email,
+      role: this.role,
+      profileUrl: this.profileUrl,
+      createdAt: this.createdAt,
+      updatedAt: this.updatedAt,
+    };
   }
 }
 
