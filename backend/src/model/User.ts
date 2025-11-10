@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 
 export enum UserRole {
   USER = 'USER',
@@ -27,6 +27,9 @@ export class User {
 
   @CreateDateColumn({ type: 'timestamp with time zone' })
   createdAt!: Date;
+
+  @UpdateDateColumn({ type: 'timestamp with time zone' })
+  updatedAt!: Date;
 }
 
 
