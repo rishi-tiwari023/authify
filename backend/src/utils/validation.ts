@@ -47,3 +47,28 @@ export function validateName(name: string): { valid: boolean; error?: string } {
   return { valid: true };
 }
 
+export function isValidUrl(url: string): { valid: boolean; error?: string } {
+  // Allow empty strings for optional URLs
+  if (!url || url.trim().length === 0) {
+    return { valid: true };
+  }
+
+  try {
+    const urlObj = new URL(url);
+    
+    // Only allow http and https protocols
+    if (!['http:', 'https:'].includes(urlObj.protocol)) {
+      return { valid: false, error: 'URL must use http or https protocol' };
+    }
+    
+    // Check URL length (reasonable limit)
+    if (url.length > 2048) {
+      return { valid: false, error: 'URL must be less than 2048 characters' };
+    }
+    
+    return { valid: true };
+  } catch (error) {
+    return { valid: false, error: 'Invalid URL format' };
+  }
+}
+
