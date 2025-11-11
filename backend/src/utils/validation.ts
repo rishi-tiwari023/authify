@@ -24,6 +24,10 @@ export function isValidPassword(password: string): { valid: boolean; error?: str
     return { valid: false, error: 'Password must contain at least one number' };
   }
   
+  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+    return { valid: false, error: 'Password must contain at least one special character' };
+  }
+  
   return { valid: true };
 }
 
