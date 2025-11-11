@@ -2,7 +2,7 @@ import { UserRepository } from '../repository/UserRepository';
 import { SafeUser, User } from '../model/User';
 import * as bcrypt from 'bcrypt';
 import { NotFoundError, ValidationError, UnauthorizedError } from '../utils/errors';
-import { isValidEmail, validateName } from '../utils/validation';
+import { isValidEmail, validateName, isValidUrl } from '../utils/validation';
 
 export interface UpdateProfileData {
   name?: string;
@@ -46,6 +46,14 @@ export class UserService {
       const nameValidation = validateName(data.name);
       if (!nameValidation.valid) {
         throw new ValidationError(nameValidation.error!);
+      }
+    }
+
+    // Validate profile URL if provided and not null
+    if (data.profileUrl !== undefined && data.profileUrl !== null) {
+      const urlValidation = isValidUrl(data.profileUrl);
+      if (!urlValidation.valid) {
+        throw new ValidationError(urlValidation.error!);
       }
     }
 
