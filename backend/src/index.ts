@@ -5,6 +5,7 @@ import userRoutes from './routes/userRoutes';
 import { errorHandler } from './utils/errors';
 import { corsMiddleware } from './middleware/corsMiddleware';
 import { loggerMiddleware } from './middleware/loggerMiddleware';
+import { TokenCleanupService } from './service/TokenCleanupService';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -47,6 +48,24 @@ app.use(errorHandler);
 
 async function bootstrap() {
   await initializeDatabase();
+  
+  // Start token cleanup service
+  const tokenCleanupService = new TokenCleanupService();
+  tokenCleanupService.start();
+  
+  // Graceful shutdown
+  process.on('SIGTERM', () => {
+    console.log('SIGTERM received, shutting down gracefully...');
+    tokenCleanupService.stop();
+    process.exit(0);
+  });
+  
+  process.on('SIGINT', () => {
+    console.log('SIGINT received, shutting down gracefully...');
+    tokenCleanupService.stop();
+    process.exit(0);
+  });
+  
   app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
     console.log('✅ Database connected');
