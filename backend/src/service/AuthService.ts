@@ -5,6 +5,7 @@ import { ValidationError, NotFoundError } from '../utils/errors';
 import { isValidEmail, isValidPassword, validateName } from '../utils/validation';
 import { PasswordResetTokenRepository } from '../repository/PasswordResetTokenRepository';
 import { PasswordResetToken } from '../model/PasswordResetToken';
+import { EmailService } from './EmailService';
 import * as crypto from 'crypto';
 
 export interface SignupData {
@@ -21,11 +22,13 @@ export interface LoginData {
 export class AuthService {
   private userRepository: UserRepository;
   private passwordResetTokenRepository: PasswordResetTokenRepository;
+  private emailService: EmailService;
   private readonly saltRounds = 10;
 
   constructor() {
     this.userRepository = new UserRepository();
     this.passwordResetTokenRepository = new PasswordResetTokenRepository();
+    this.emailService = new EmailService();
   }
 
   async signup(data: SignupData): Promise<User> {
@@ -107,6 +110,14 @@ export class AuthService {
       expiresAt,
       used: false,
     });
+
+    // Send password reset email
+    try {
+      await this.emailService.sendPasswordResetEmail(user.email, token);
+    } catch (error) {
+      // Log error but don't fail the request (token is still created)
+      console.error('Failed to send password reset email:', error);
+    }
 
     return resetToken;
   }
