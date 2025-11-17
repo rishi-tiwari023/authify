@@ -11,6 +11,7 @@ import { sanitizationMiddleware } from './middleware/sanitizationMiddleware';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const APP_VERSION = process.env.APP_VERSION || '1.0.0';
 
 app.use(corsMiddleware);
 app.use(loggerMiddleware);
@@ -18,20 +19,31 @@ app.use(securityHeadersMiddleware);
 app.use(express.json());
 app.use(sanitizationMiddleware);
 
-app.get('/health', async (req, res) => {
+app.get('/health', async (_req, res) => {
   try {
     const dbStatus = AppDataSource.isInitialized ? 'connected' : 'disconnected';
-    res.status(200).json({
+
+    const serviceInfo = {
       status: 'ok',
       message: 'Server is running',
+      version: APP_VERSION,
+      environment: process.env.NODE_ENV || 'development',
+      nodeVersion: process.version,
+      uptimeSeconds: Math.round(process.uptime()),
       database: dbStatus,
       timestamp: new Date().toISOString(),
+    };
+
+    res.status(200).json({
+      ...serviceInfo,
     });
   } catch (error) {
     res.status(503).json({
       status: 'error',
       message: 'Health check failed',
       database: 'error',
+      version: APP_VERSION,
+      timestamp: new Date().toISOString(),
     });
   }
 });
