@@ -63,6 +63,11 @@ export class AuthService {
       role: UserRole.USER,
     });
 
+    // Fire-and-forget welcome email (non-blocking for signup)
+    this.emailService
+      .sendWelcomeEmail(user.email, user.name)
+      .catch((error) => console.error('Failed to send welcome email:', error));
+
     return user;
   }
 
