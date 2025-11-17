@@ -3,6 +3,7 @@ import { SafeUser, User } from '../model/User';
 import * as bcrypt from 'bcrypt';
 import { NotFoundError, ValidationError, UnauthorizedError } from '../utils/errors';
 import { isValidEmail, validateName, isValidUrl } from '../utils/validation';
+import { PasswordResetTokenRepository } from '../repository/PasswordResetTokenRepository';
 
 export interface UpdateProfileData {
   name?: string;
@@ -17,10 +18,12 @@ export interface ChangePasswordData {
 
 export class UserService {
   private userRepository: UserRepository;
+  private passwordResetTokenRepository: PasswordResetTokenRepository;
   private readonly saltRounds = 10;
 
   constructor() {
     this.userRepository = new UserRepository();
+    this.passwordResetTokenRepository = new PasswordResetTokenRepository();
   }
 
   async updateProfile(userId: string, data: UpdateProfileData): Promise<SafeUser> {
@@ -96,6 +99,8 @@ export class UserService {
   }
 
   async deleteUser(userId: string): Promise<void> {
+    await this.passwordResetTokenRepository.deleteByUserId(userId);
+
     const deleted = await this.userRepository.delete(userId);
     if (!deleted) {
       throw new NotFoundError('User not found');
