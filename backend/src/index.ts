@@ -5,6 +5,7 @@ import userRoutes from './routes/userRoutes';
 import { errorHandler } from './utils/errors';
 import { corsMiddleware } from './middleware/corsMiddleware';
 import { loggerMiddleware } from './middleware/loggerMiddleware';
+import { securityHeadersMiddleware } from './middleware/securityHeaders';
 import { TokenCleanupService } from './service/TokenCleanupService';
 
 const app = express();
@@ -12,6 +13,7 @@ const PORT = process.env.PORT || 3000;
 
 app.use(corsMiddleware);
 app.use(loggerMiddleware);
+app.use(securityHeadersMiddleware);
 app.use(express.json());
 
 app.get('/health', async (req, res) => {
