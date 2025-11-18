@@ -32,17 +32,16 @@ npm install
 ```
 
 3. Set up environment variables:
-Create a `.env` file in the backend directory with the following variables:
-```env
-DB_HOST=localhost
-DB_PORT=5432
-DB_USER=postgres
-DB_PASSWORD=yourpass
-DB_NAME=authify
-JWT_SECRET=your-secret-key-change-in-production
-PORT=3000
-NODE_ENV=development
+Duplicate the sample file and adjust values for your environment:
+```bash
+cp env.example .env   # or copy env.example .env on Windows
 ```
+
+Key variables:
+- Database: `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`
+- JWT: `JWT_SECRET`
+- Email: `EMAIL_FROM`, `EMAIL_FROM_NAME`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `FRONTEND_URL`
+- Server: `PORT`, `NODE_ENV`, `APP_VERSION`
 
 4. Start PostgreSQL and create the database:
 ```sql
