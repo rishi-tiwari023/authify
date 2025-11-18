@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { AuthController } from '../controller/AuthController';
 import { authMiddleware, requireRole } from '../middleware/authMiddleware';
 import { rateLimitMiddleware } from '../middleware/rateLimitMiddleware';
+import { validateBody } from '../middleware/validationMiddleware';
+import { signupSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from '../validation/authSchemas';
 
 const router = Router();
 const authController = new AuthController();
@@ -17,7 +19,7 @@ const authRateLimit = rateLimitMiddleware(5, 60000); // 5 requests per minute
  * @body {string} email - User's email address
  * @body {string} password - User's password (min 8 chars, must contain uppercase, lowercase, and number)
  */
-router.post('/signup', authRateLimit, (req, res) => authController.signup(req, res));
+router.post('/signup', authRateLimit, validateBody(signupSchema), (req, res) => authController.signup(req, res));
 
 /**
  * @route POST /api/auth/login
@@ -26,7 +28,7 @@ router.post('/signup', authRateLimit, (req, res) => authController.signup(req, r
  * @body {string} email - User's email address
  * @body {string} password - User's password
  */
-router.post('/login', authRateLimit, (req, res) => authController.login(req, res));
+router.post('/login', authRateLimit, validateBody(loginSchema), (req, res) => authController.login(req, res));
 
 /**
  * @route POST /api/auth/refresh
@@ -58,7 +60,7 @@ router.get('/users', authMiddleware, requireRole('ADMIN'), (req, res) => authCon
  * @access Public
  * @body {string} email - User's email address
  */
-router.post('/forgot-password', authRateLimit, (req, res) => authController.forgotPassword(req, res));
+router.post('/forgot-password', authRateLimit, validateBody(forgotPasswordSchema), (req, res) => authController.forgotPassword(req, res));
 
 /**
  * @route POST /api/auth/reset-password
@@ -67,7 +69,7 @@ router.post('/forgot-password', authRateLimit, (req, res) => authController.forg
  * @body {string} token - Password reset token
  * @body {string} newPassword - New password (min 8 chars, must contain uppercase, lowercase, and number)
  */
-router.post('/reset-password', authRateLimit, (req, res) => authController.resetPassword(req, res));
+router.post('/reset-password', authRateLimit, validateBody(resetPasswordSchema), (req, res) => authController.resetPassword(req, res));
 
 export default router;
 
