@@ -1,9 +1,8 @@
+import nodemailer, { Transporter } from 'nodemailer';
+
 /**
  * Email service for sending emails (password reset, notifications, etc.)
- * This is a placeholder implementation that logs emails to console.
- * In production, integrate with a real email service like SendGrid, AWS SES, or Nodemailer.
  */
-
 export interface EmailOptions {
   to: string;
   subject: string;
@@ -14,10 +13,27 @@ export interface EmailOptions {
 export class EmailService {
   private readonly fromEmail: string;
   private readonly fromName: string;
+  private transporter: Transporter | null = null;
+  private readonly emailEnabled: boolean;
 
   constructor() {
     this.fromEmail = process.env.EMAIL_FROM || 'noreply@authify.com';
     this.fromName = process.env.EMAIL_FROM_NAME || 'Authify';
+    this.emailEnabled = Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS);
+
+    if (this.emailEnabled) {
+      this.transporter = nodemailer.createTransport({
+        host: process.env.SMTP_HOST,
+        port: Number(process.env.SMTP_PORT || 587),
+        secure: process.env.SMTP_SECURE === 'true' || Number(process.env.SMTP_PORT || 587) === 465,
+        auth: {
+          user: process.env.SMTP_USER!,
+          pass: process.env.SMTP_PASS!,
+        },
+      });
+    } else {
+      console.warn('[EmailService] SMTP credentials not configured. Emails will be logged to console.');
+    }
   }
 
   /**
@@ -26,21 +42,26 @@ export class EmailService {
    * @returns Promise that resolves when email is sent
    */
   async sendEmail(options: EmailOptions): Promise<void> {
-    // Placeholder implementation - logs to console
-    // TODO: Integrate with a real email service provider
+    if (this.transporter) {
+      await this.transporter.sendMail({
+        from: `${this.fromName} <${this.fromEmail}>`,
+        to: options.to,
+        subject: options.subject,
+        text: options.text,
+        html: options.html,
+      });
+      return;
+    }
+
+    // Fallback logging when transporter not configured
     console.log('='.repeat(50));
-    console.log('EMAIL SENT (Placeholder - not actually sent)');
+    console.log('[EmailService] SMTP not configured. Logging email instead:');
     console.log('From:', `${this.fromName} <${this.fromEmail}>`);
     console.log('To:', options.to);
     console.log('Subject:', options.subject);
     console.log('Text:', options.text || '(HTML only)');
     console.log('HTML:', options.html);
     console.log('='.repeat(50));
-
-    // In production, uncomment and configure one of these:
-    // await this.sendWithNodemailer(options);
-    // await this.sendWithSendGrid(options);
-    // await this.sendWithAWSSES(options);
   }
 
   /**
@@ -145,18 +166,11 @@ If you did not request this password reset, please ignore this email.
     });
   }
 
-  // Placeholder methods for future email service integration
-
-  // private async sendWithNodemailer(options: EmailOptions): Promise<void> {
-  //   // Implement with nodemailer
-  // }
-
-  // private async sendWithSendGrid(options: EmailOptions): Promise<void> {
-  //   // Implement with SendGrid
-  // }
-
-  // private async sendWithAWSSES(options: EmailOptions): Promise<void> {
-  //   // Implement with AWS SES
-  // }
+  /**
+   * Check if email sending is fully configured.
+   */
+  isEmailEnabled(): boolean {
+    return this.emailEnabled;
+  }
 }
 
