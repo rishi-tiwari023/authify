@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { UserController } from '../controller/UserController';
 import { authMiddleware } from '../middleware/authMiddleware';
+import { validateBody } from '../middleware/validationMiddleware';
+import { updateProfileSchema, changePasswordSchema } from '../validation/userSchemas';
 
 const router = Router();
 const userController = new UserController();
@@ -22,7 +24,7 @@ router.get('/profile', authMiddleware, (req, res) => userController.getProfile(r
  * @body {string} [email] - User's email address
  * @body {string} [profileUrl] - User's profile picture URL
  */
-router.put('/profile', authMiddleware, (req, res) => userController.updateProfile(req as any, res));
+router.put('/profile', authMiddleware, validateBody(updateProfileSchema), (req, res) => userController.updateProfile(req as any, res));
 
 /**
  * @route PUT /api/user/password
@@ -32,7 +34,7 @@ router.put('/profile', authMiddleware, (req, res) => userController.updateProfil
  * @body {string} currentPassword - User's current password
  * @body {string} newPassword - User's new password (min 8 chars, must contain uppercase, lowercase, and number)
  */
-router.put('/password', authMiddleware, (req, res) => userController.changePassword(req as any, res));
+router.put('/password', authMiddleware, validateBody(changePasswordSchema), (req, res) => userController.changePassword(req as any, res));
 
 /**
  * @route DELETE /api/user/account
