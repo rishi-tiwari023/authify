@@ -10,3 +10,64 @@
   padding: 4rem clamp(1.5rem, 5vw, 4rem) 2rem;
   text-align: center;
 }
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid rgba(226, 232, 240, 0.2);
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #a5b4fc;
+}
+
+.hero-title {
+  margin: 1.5rem auto 1rem;
+  font-size: clamp(2.5rem, 6vw, 3.75rem);
+  line-height: 1.1;
+  max-width: 900px;
+}
+
+.hero-copy {
+  margin: 0 auto 2rem;
+  max-width: 720px;
+  color: #cbd5f5;
+  font-size: 1.125rem;
+}
+
+.hero-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 2.5rem;
+}
+
+.hero-actions button {
+  padding: 0.85rem 1.75rem;
+  border-radius: 999px;
+  border: none;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 200ms ease, opacity 200ms ease;
+}
+
+.hero-actions .primary {
+  background: linear-gradient(120deg, #6366f1, #8b5cf6);
+  color: #fff;
+}
+
+.hero-actions .ghost {
+  background: transparent;
+  color: #e2e8f0;
+  border: 1px solid rgba(226, 232, 240, 0.35);
+}
+
+.hero-actions button:hover {
+  transform: translateY(-2px);
+  opacity: 0.9;
+}
