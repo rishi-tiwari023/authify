@@ -173,3 +173,9 @@
   box-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
   margin-top: 0.35rem;
 }
+
+.trust-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1.5rem;
+}

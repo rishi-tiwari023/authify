@@ -110,6 +110,30 @@ function App() {
             ))}
           </ol>
         </section>
+
+        <section className="panel trust">
+          <div>
+            <p className="eyebrow">Trusted by builders</p>
+            <h2>Ship auth with confidence</h2>
+            <p className="section-copy">
+              Teams lean on Authify for password hygiene, auditable resets, and delightful onboarding journeys.
+            </p>
+          </div>
+          <div className="trust-grid">
+            <div>
+              <p className="stat-value">null</p>
+              <p className="stat-label">Engineering teams onboarded</p>
+            </div>
+            <div>
+              <p className="stat-value">null</p>
+              <p className="stat-label">Median token refresh</p>
+            </div>
+            <div>
+              <p className="stat-value">24/7</p>
+              <p className="stat-label">Support coverage</p>
+            </div>
+          </div>
+        </section>
       </main>
     </div>
   )
