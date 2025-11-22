@@ -29,6 +29,21 @@ const features = [
   },
 ]
 
+const timeline = [
+  {
+    title: 'Provision Authify backend',
+    detail: 'Configure env vars & connect Postgres in under 5 minutes.',
+  },
+  {
+    title: 'Plug in the SDK',
+    detail: 'Drop-in hooks for signup, login, and session refresh.',
+  },
+  {
+    title: 'Launch confidently',
+    detail: 'Continuous token cleanup and automated hardening guardrails.',
+  },
+]
+
 function App() {
   return (
     <div className="app-shell">
@@ -76,6 +91,24 @@ function App() {
               </article>
             ))}
           </div>
+        </section>
+
+        <section className="panel timeline">
+          <div>
+            <p className="eyebrow">Go live checklist</p>
+            <h2>From zero to production in three steps</h2>
+          </div>
+          <ol>
+            {timeline.map((item) => (
+              <li key={item.title}>
+                <div className="step-marker" />
+                <div>
+                  <h3>{item.title}</h3>
+                  <p>{item.detail}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
         </section>
       </main>
     </div>
