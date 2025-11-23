@@ -48,7 +48,7 @@ const timeline = [
 function App() {
   return (
     <div className="app-shell">
-      <header className="hero">
+      <header className="hero" role="banner">
         <span className="hero-badge">Production-ready auth</span>
         <h1 className="hero-title">
           Your users deserve seamless sign-in experiences
@@ -58,8 +58,8 @@ function App() {
           focus on roadmap work, not auth edge cases.
         </p>
         <div className="hero-actions">
-          <button className="primary">Launch demo</button>
-          <button className="ghost">View docs</button>
+          <button className="primary" type="button">Launch demo</button>
+          <button className="ghost" type="button">View docs</button>
         </div>
         <div className="hero-stats">
           {stats.map((stat) => (
@@ -71,7 +71,7 @@ function App() {
         </div>
       </header>
 
-      <main className="content">
+      <main className="content" role="main">
         <section className="panel">
           <div>
             <p className="eyebrow">Why Authify</p>
@@ -99,7 +99,7 @@ function App() {
             <p className="eyebrow">Go live checklist</p>
             <h2>From zero to production in three steps</h2>
           </div>
-          <ol>
+          <ol role="list">
             {timeline.map((item) => (
               <li key={item.title}>
                 <div className="step-marker" />
