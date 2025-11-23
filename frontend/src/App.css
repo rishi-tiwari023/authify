@@ -81,6 +81,9 @@
   border-radius: 1.5rem;
   border: 1px solid rgba(148, 163, 184, 0.2);
   backdrop-filter: blur(12px);
+  width: 100%;
+  max-width: 1150px;
+  margin: 0 auto;
 }
 
 .stat-value {
@@ -99,6 +102,9 @@
   flex-direction: column;
   gap: 2rem;
   padding: 0 clamp(1.5rem, 5vw, 4rem) 3rem;
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
 }
 
 .panel {
@@ -256,10 +262,24 @@
   text-align: center;
 }
 
+@media (min-width: 768px) {
+  .hero-stats {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .features-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 @media (min-width: 900px) {
   .footer-content {
     flex-direction: row;
     justify-content: space-between;
     align-items: flex-start;
+  }
+
+  .features-grid {
+    grid-template-columns: repeat(4, 1fr);
   }
 }
