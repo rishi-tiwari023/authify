@@ -1,4 +1,5 @@
 import './App.css'
+import Footer from './components/Footer'
 
 const stats = [
   { label: 'Active users', value: 'null' },
@@ -134,6 +135,7 @@ function App() {
             </div>
           </div>
         </section>
+        <Footer />
       </main>
     </div>
   )
