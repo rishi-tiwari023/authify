@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import './App.css'
 import Footer from './components/Footer'
 import Login from './components/Login'
+import Signup from './components/Signup'
 import { useAuth } from './contexts/AuthContext'
 
 const stats = [
@@ -53,7 +54,7 @@ function App() {
     <Routes>
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<SignupComingSoon />} />
+      <Route path="/signup" element={<Signup />} />
       <Route path="/dashboard" element={<DashboardPlaceholder />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
@@ -152,17 +153,6 @@ function LandingPage() {
         </section>
         <Footer />
       </main>
-    </div>
-  )
-}
-
-function SignupComingSoon() {
-  return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <h2>Signup coming soon</h2>
-        <p className="auth-subtitle">We&apos;re wiring up the onboarding flow.</p>
-      </div>
     </div>
   )
 }
