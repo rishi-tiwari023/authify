@@ -1,5 +1,8 @@
+import { Routes, Route, Navigate } from 'react-router-dom'
 import './App.css'
 import Footer from './components/Footer'
+import Login from './components/Login'
+import { useAuth } from './contexts/AuthContext'
 
 const stats = [
   { label: 'Active users', value: 'null' },
@@ -46,6 +49,18 @@ const timeline = [
 ]
 
 function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<LandingPage />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<SignupComingSoon />} />
+      <Route path="/dashboard" element={<DashboardPlaceholder />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  )
+}
+
+function LandingPage() {
   return (
     <div className="app-shell">
       <header className="hero" role="banner">
@@ -137,6 +152,38 @@ function App() {
         </section>
         <Footer />
       </main>
+    </div>
+  )
+}
+
+function SignupComingSoon() {
+  return (
+    <div className="auth-container">
+      <div className="auth-card">
+        <h2>Signup coming soon</h2>
+        <p className="auth-subtitle">We&apos;re wiring up the onboarding flow.</p>
+      </div>
+    </div>
+  )
+}
+
+function DashboardPlaceholder() {
+  const { user, isAuthenticated } = useAuth()
+
+  return (
+    <div className="auth-container">
+      <div className="auth-card">
+        <h2>Dashboard</h2>
+        {isAuthenticated && user ? (
+          <>
+            <p className="auth-subtitle">Welcome back, {user.name}.</p>
+            <p>Email: {user.email}</p>
+            <p>Role: {user.role}</p>
+          </>
+        ) : (
+          <p className="auth-subtitle">Please log in to view your dashboard.</p>
+        )}
+      </div>
     </div>
   )
 }
