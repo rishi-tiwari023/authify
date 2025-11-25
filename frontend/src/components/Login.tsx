@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import './Login.css'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -41,37 +42,54 @@ export default function Login() {
   }
 
   return (
-    <section>
-      <h2>Login</h2>
-      <p>Sign in to manage tokens and protected routes.</p>
-      <form onSubmit={handleSubmit}>
-        {error && <p role="alert">{error}</p>}
+    <div className="auth-container">
+      <div className="auth-card">
+        <h2>Welcome back</h2>
+        <p className="auth-subtitle">Sign in to your Authify dashboard</p>
 
-        <label>
-          Email
-          <input
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-          />
-        </label>
+        <form onSubmit={handleSubmit} className="auth-form">
+          {error && (
+            <div className="error-message" role="alert">
+              {error}
+            </div>
+          )}
 
-        <label>
-          Password
-          <input
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-          />
-        </label>
+          <div className="form-group">
+            <label htmlFor="email">Email</label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="you@example.com"
+              disabled={loading}
+              required
+            />
+          </div>
 
-        <button type="submit" disabled={loading}>
-          {loading ? 'Signing in…' : 'Sign in'}
-        </button>
-      </form>
-    </section>
+          <div className="form-group">
+            <label htmlFor="password">Password</label>
+            <input
+              id="password"
+              type="password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="Enter your password"
+              disabled={loading}
+              required
+            />
+          </div>
+
+          <button type="submit" className="auth-button" disabled={loading}>
+            {loading ? 'Signing in…' : 'Sign in'}
+          </button>
+        </form>
+
+        <p className="auth-footer">
+          Don't have an account? <a href="/signup">Create one</a>
+        </p>
+      </div>
+    </div>
   )
 }
 
