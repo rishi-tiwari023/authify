@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
 
 export default function Signup() {
   const [name, setName] = useState('')
@@ -8,10 +10,12 @@ export default function Signup() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const { signup } = useAuth()
+  const navigate = useNavigate()
 
   const validateEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError(null)
 
@@ -36,10 +40,14 @@ export default function Signup() {
     }
 
     setLoading(true)
-    setTimeout(() => {
-      console.log('signup', { name, email, password })
+    try {
+      await signup(name.trim(), email.trim(), password)
+      navigate('/dashboard')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to create account.')
+    } finally {
       setLoading(false)
-    }, 600)
+    }
   }
 
   return (
