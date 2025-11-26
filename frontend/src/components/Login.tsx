@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import './Login.css'
 
@@ -9,6 +10,7 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const { login } = useAuth()
+  const navigate = useNavigate()
 
   const validateEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
 
@@ -34,6 +36,7 @@ export default function Login() {
     setLoading(true)
     try {
       await login(email, password)
+      navigate('/dashboard')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to sign in.')
     } finally {
