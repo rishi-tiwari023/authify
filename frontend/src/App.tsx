@@ -3,7 +3,8 @@ import './App.css'
 import Footer from './components/Footer'
 import Login from './components/Login'
 import Signup from './components/Signup'
-import { useAuth } from './contexts/AuthContext'
+import Dashboard from './components/Dashboard'
+import ProtectedRoute from './components/ProtectedRoute'
 
 const stats = [
   { label: 'Active users', value: 'null' },
@@ -55,7 +56,9 @@ function App() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<Signup />} />
-      <Route path="/dashboard" element={<DashboardPlaceholder />} />
+      <Route element={<ProtectedRoute />}>
+        <Route path="/dashboard" element={<Dashboard />} />
+      </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )
@@ -153,27 +156,6 @@ function LandingPage() {
         </section>
         <Footer />
       </main>
-    </div>
-  )
-}
-
-function DashboardPlaceholder() {
-  const { user, isAuthenticated } = useAuth()
-
-  return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <h2>Dashboard</h2>
-        {isAuthenticated && user ? (
-          <>
-            <p className="auth-subtitle">Welcome back, {user.name}.</p>
-            <p>Email: {user.email}</p>
-            <p>Role: {user.role}</p>
-          </>
-        ) : (
-          <p className="auth-subtitle">Please log in to view your dashboard.</p>
-        )}
-      </div>
     </div>
   )
 }
