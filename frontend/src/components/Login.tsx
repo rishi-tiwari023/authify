@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import './Login.css'
 
@@ -84,9 +84,9 @@ export default function Login() {
           </div>
 
           <div style={{ textAlign: 'right', marginTop: '-0.5rem' }}>
-            <a href="/forgot-password" style={{ color: '#a5b4fc', textDecoration: 'none', fontSize: '0.875rem' }}>
+            <Link to="/forgot-password" style={{ color: '#a5b4fc', textDecoration: 'none', fontSize: '0.875rem' }}>
               Forgot password?
-            </a>
+            </Link>
           </div>
 
           <button type="submit" className="auth-button" disabled={loading}>
