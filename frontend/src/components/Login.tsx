@@ -83,6 +83,12 @@ export default function Login() {
             />
           </div>
 
+          <div style={{ textAlign: 'right', marginTop: '-0.5rem' }}>
+            <a href="/forgot-password" style={{ color: '#a5b4fc', textDecoration: 'none', fontSize: '0.875rem' }}>
+              Forgot password?
+            </a>
+          </div>
+
           <button type="submit" className="auth-button" disabled={loading}>
             {loading ? 'Signing in…' : 'Sign in'}
           </button>
