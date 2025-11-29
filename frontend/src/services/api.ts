@@ -223,6 +223,24 @@ class ApiService {
       body: JSON.stringify({ token, newPassword }),
     })
   }
+
+  async getProfile(): Promise<User> {
+    return this.request<User>('/user/profile')
+  }
+
+  async updateProfile(data: { name?: string; email?: string; profileUrl?: string | null }): Promise<User> {
+    const response = await this.request<User>('/user/profile', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    })
+    
+    // Update stored user data
+    if (response) {
+      localStorage.setItem('user', JSON.stringify(response))
+    }
+    
+    return response
+  }
 }
 
 export const apiService = new ApiService()
