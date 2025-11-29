@@ -27,15 +27,49 @@ export interface LoginData {
 }
 
 class ApiService {
+  private isRefreshing = false
+  private refreshPromise: Promise<LoginResponse> | null = null
+
   private getAuthToken(): string | null {
     return localStorage.getItem('auth_token')
   }
 
+  private decodeToken(token: string): { exp?: number } | null {
+    try {
+      const payload = token.split('.')[1]
+      return JSON.parse(atob(payload))
+    } catch {
+      return null
+    }
+  }
+
+  private isTokenExpiringSoon(token: string | null, thresholdMinutes = 5): boolean {
+    if (!token) return true
+    const decoded = this.decodeToken(token)
+    if (!decoded || !decoded.exp) return true
+    const expiryTime = decoded.exp * 1000
+    const now = Date.now()
+    const threshold = thresholdMinutes * 60 * 1000
+    return expiryTime - now < threshold
+  }
+
   private async request<T>(
     endpoint: string,
-    options: RequestInit = {}
+    options: RequestInit = {},
+    retryOn401 = true
   ): Promise<T> {
-    const token = this.getAuthToken()
+    let token = this.getAuthToken()
+    
+    // Check if token is expiring soon and refresh proactively
+    if (token && this.isTokenExpiringSoon(token) && !this.isRefreshing) {
+      try {
+        await this.refreshToken()
+        token = this.getAuthToken()
+      } catch {
+        // If refresh fails, continue with original token
+      }
+    }
+
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
       ...(options.headers as Record<string, string> || {}),
@@ -49,6 +83,31 @@ class ApiService {
       ...options,
       headers,
     })
+
+    // Handle 401 errors with automatic token refresh
+    if (response.status === 401 && retryOn401 && token && !endpoint.includes('/auth/refresh')) {
+      try {
+        await this.refreshToken()
+        // Retry the original request with new token
+        const newToken = this.getAuthToken()
+        if (newToken) {
+          headers['Authorization'] = `Bearer ${newToken}`
+          const retryResponse = await fetch(`${API_BASE_URL}${endpoint}`, {
+            ...options,
+            headers,
+          })
+          if (!retryResponse.ok) {
+            const error = await retryResponse.json().catch(() => ({ error: 'Request failed' }))
+            throw new Error(error.error || `HTTP error! status: ${retryResponse.status}`)
+          }
+          return retryResponse.json()
+        }
+      } catch (refreshError) {
+        // Refresh failed, logout user
+        this.logout()
+        throw new Error('Session expired. Please log in again.')
+      }
+    }
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ error: 'Request failed' }))
@@ -96,18 +155,50 @@ class ApiService {
   }
 
   async refreshToken(): Promise<LoginResponse> {
-    const response = await this.request<LoginResponse>('/auth/refresh', {
-      method: 'POST',
-    })
-    
-    if (response.token) {
-      localStorage.setItem('auth_token', response.token)
-      if (response.user) {
-        localStorage.setItem('user', JSON.stringify(response.user))
-      }
+    // Prevent multiple simultaneous refresh requests
+    if (this.isRefreshing && this.refreshPromise) {
+      return this.refreshPromise
     }
-    
-    return response
+
+    this.isRefreshing = true
+    this.refreshPromise = (async () => {
+      try {
+        const token = this.getAuthToken()
+        if (!token) {
+          throw new Error('No token to refresh')
+        }
+
+        const headers: Record<string, string> = {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        }
+
+        const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+          method: 'POST',
+          headers,
+        })
+
+        if (!response.ok) {
+          throw new Error('Token refresh failed')
+        }
+
+        const data = await response.json() as LoginResponse
+        
+        if (data.token) {
+          localStorage.setItem('auth_token', data.token)
+          if (data.user) {
+            localStorage.setItem('user', JSON.stringify(data.user))
+          }
+        }
+        
+        return data
+      } finally {
+        this.isRefreshing = false
+        this.refreshPromise = null
+      }
+    })()
+
+    return this.refreshPromise
   }
 
   getStoredUser(): User | null {
