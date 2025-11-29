@@ -23,16 +23,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const storedUser = apiService.getStoredUser()
     if (storedUser && apiService.isAuthenticated()) {
       setUser(storedUser)
-      // Verify token is still valid
+      // Verify token is still valid and refresh if needed
       apiService.getCurrentUser()
         .then((currentUser) => {
           setUser(currentUser)
           localStorage.setItem('user', JSON.stringify(currentUser))
         })
-        .catch(() => {
-          // Token invalid, clear storage
-          apiService.logout()
-          setUser(null)
+        .catch(async (error) => {
+          // If token is invalid, try to refresh it
+          if (error.message.includes('Session expired') || error.message.includes('401')) {
+            try {
+              const refreshResponse = await apiService.refreshToken()
+              const refreshedUser = await apiService.getCurrentUser()
+              setUser(refreshedUser)
+              localStorage.setItem('user', JSON.stringify(refreshedUser))
+            } catch {
+              // Refresh failed, clear storage
+              apiService.logout()
+              setUser(null)
+            }
+          } else {
+            // Other errors, clear storage
+            apiService.logout()
+            setUser(null)
+          }
         })
         .finally(() => setLoading(false))
     } else {
