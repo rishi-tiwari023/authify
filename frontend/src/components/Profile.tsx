@@ -1,0 +1,219 @@
+import { useState, useEffect } from 'react'
+import type { FormEvent } from 'react'
+import { useNavigate, Link } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
+import { apiService } from '../services/api'
+import './Login.css'
+
+export default function Profile() {
+  const { user: authUser, logout } = useAuth()
+  const navigate = useNavigate()
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [profileUrl, setProfileUrl] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [fetching, setFetching] = useState(true)
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const profile = await apiService.getProfile()
+        setName(profile.name)
+        setEmail(profile.email)
+        setProfileUrl(profile.profileUrl || '')
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load profile')
+      } finally {
+        setFetching(false)
+      }
+    }
+
+    fetchProfile()
+  }, [])
+
+  const validateEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+
+  const validateUrl = (value: string) => {
+    if (!value.trim()) return true
+    try {
+      new URL(value)
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setError(null)
+    setSuccess(null)
+
+    if (name.trim().length < 2) {
+      setError('Name must be at least 2 characters long.')
+      return
+    }
+
+    if (!validateEmail(email)) {
+      setError('Please enter a valid email address.')
+      return
+    }
+
+    if (profileUrl && !validateUrl(profileUrl)) {
+      setError('Please enter a valid URL for profile picture.')
+      return
+    }
+
+    setLoading(true)
+    try {
+      const updatedUser = await apiService.updateProfile({
+        name: name.trim(),
+        email: email.trim(),
+        profileUrl: profileUrl.trim() || null,
+      })
+      
+      setSuccess('Profile updated successfully!')
+      
+      // Update auth context user
+      if (authUser) {
+        authUser.name = updatedUser.name
+        authUser.email = updatedUser.email
+        authUser.profileUrl = updatedUser.profileUrl
+      }
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccess(null), 3000)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update profile')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (fetching) {
+    return (
+      <div className="auth-container">
+        <div className="auth-card">
+          <p className="auth-subtitle">Loading profile...</p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="auth-container">
+      <div className="auth-card">
+        <h2>Profile Settings</h2>
+        <p className="auth-subtitle">Manage your account information</p>
+
+        {authUser && (
+          <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '0.75rem' }}>
+            <p style={{ margin: '0.25rem 0', color: '#cbd5f5' }}>
+              <strong style={{ color: '#e2e8f0' }}>Role:</strong> {authUser.role}
+            </p>
+            <p style={{ margin: '0.25rem 0', color: '#cbd5f5' }}>
+              <strong style={{ color: '#e2e8f0' }}>Member since:</strong>{' '}
+              {new Date(authUser.createdAt).toLocaleDateString()}
+            </p>
+            {authUser.profileUrl && (
+              <div style={{ marginTop: '1rem' }}>
+                <img
+                  src={authUser.profileUrl}
+                  alt="Profile"
+                  style={{
+                    width: '80px',
+                    height: '80px',
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                  }}
+                />
+              </div>
+            )}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="auth-form">
+          {error && (
+            <div className="error-message" role="alert">
+              {error}
+            </div>
+          )}
+
+          {success && (
+            <div
+              style={{
+                padding: '0.75rem 1rem',
+                borderRadius: '0.75rem',
+                background: 'rgba(34, 197, 94, 0.15)',
+                border: '1px solid rgba(34, 197, 94, 0.3)',
+                color: '#86efac',
+                fontSize: '0.9rem',
+              }}
+              role="alert"
+            >
+              {success}
+            </div>
+          )}
+
+          <div className="form-group">
+            <label htmlFor="name">Name</label>
+            <input
+              id="name"
+              type="text"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder="Your full name"
+              disabled={loading}
+              required
+              minLength={2}
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="email">Email</label>
+            <input
+              id="email"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              placeholder="you@example.com"
+              disabled={loading}
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="profileUrl">Profile Picture URL</label>
+            <input
+              id="profileUrl"
+              type="url"
+              value={profileUrl}
+              onChange={(event) => setProfileUrl(event.target.value)}
+              placeholder="https://example.com/photo.jpg"
+              disabled={loading}
+            />
+          </div>
+
+          <button type="submit" className="auth-button" disabled={loading}>
+            {loading ? 'Updating…' : 'Update Profile'}
+          </button>
+        </form>
+
+        <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+          <Link
+            to="/dashboard"
+            style={{
+              color: '#a5b4fc',
+              textDecoration: 'none',
+              fontSize: '0.9rem',
+            }}
+          >
+            Back to Dashboard
+          </Link>
+        </div>
+      </div>
+    </div>
+  )
+}
+
