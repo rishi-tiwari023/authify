@@ -17,6 +17,9 @@ export default function Profile() {
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
   const [showChangePassword, setShowChangePassword] = useState(false)
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -90,6 +93,19 @@ export default function Profile() {
       setError(err instanceof Error ? err.message : 'Failed to update profile')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleDeleteAccount = async () => {
+    setDeleteError(null)
+    setDeleting(true)
+    try {
+      await apiService.deleteAccount()
+      await logout()
+      navigate('/')
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : 'Failed to delete account')
+      setDeleting(false)
     }
   }
 
@@ -247,6 +263,109 @@ export default function Profile() {
           onCancel={() => setShowChangePassword(false)}
         />
       )}
+
+      <div className="auth-card" style={{ marginTop: '2rem', borderColor: 'rgba(239, 68, 68, 0.3)' }}>
+        <h3 style={{ color: '#ef4444', marginBottom: '0.5rem' }}>Danger Zone</h3>
+        <p className="auth-subtitle" style={{ color: '#fca5a5', marginBottom: '1.5rem' }}>
+          Permanently delete your account and all associated data
+        </p>
+
+        {deleteError && (
+          <div className="error-message" role="alert" style={{ marginBottom: '1rem' }}>
+            {deleteError}
+          </div>
+        )}
+
+        {!showDeleteConfirmation ? (
+          <button
+            type="button"
+            onClick={() => setShowDeleteConfirmation(true)}
+            disabled={deleting}
+            style={{
+              padding: '0.75rem 1.5rem',
+              borderRadius: '0.5rem',
+              border: '1px solid rgba(239, 68, 68, 0.5)',
+              background: 'rgba(239, 68, 68, 0.1)',
+              color: '#fca5a5',
+              fontSize: '0.9rem',
+              cursor: 'pointer',
+              transition: 'all 200ms ease',
+            }}
+            onMouseEnter={(e) => {
+              if (!deleting) {
+                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'
+                e.currentTarget.style.borderColor = '#ef4444'
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!deleting) {
+                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'
+                e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.5)'
+              }
+            }}
+          >
+            Delete Account
+          </button>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div
+              style={{
+                padding: '1rem',
+                borderRadius: '0.75rem',
+                background: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid rgba(239, 68, 68, 0.3)',
+              }}
+            >
+              <p style={{ color: '#fca5a5', margin: '0 0 0.5rem 0', fontWeight: '500' }}>
+                Are you sure you want to delete your account?
+              </p>
+              <p style={{ color: '#fca5a5', margin: 0, fontSize: '0.9rem' }}>
+                This action cannot be undone. All your data will be permanently deleted.
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button
+                type="button"
+                onClick={handleDeleteAccount}
+                disabled={deleting}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  borderRadius: '0.5rem',
+                  border: 'none',
+                  background: '#ef4444',
+                  color: '#fff',
+                  fontSize: '0.9rem',
+                  cursor: deleting ? 'not-allowed' : 'pointer',
+                  opacity: deleting ? 0.6 : 1,
+                  transition: 'all 200ms ease',
+                }}
+              >
+                {deleting ? 'Deleting…' : 'Yes, Delete My Account'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDeleteConfirmation(false)
+                  setDeleteError(null)
+                }}
+                disabled={deleting}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  borderRadius: '0.5rem',
+                  border: '1px solid rgba(148, 163, 184, 0.2)',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  color: '#a5b4fc',
+                  fontSize: '0.9rem',
+                  cursor: deleting ? 'not-allowed' : 'pointer',
+                  opacity: deleting ? 0.6 : 1,
+                }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
