@@ -248,6 +248,12 @@ class ApiService {
       body: JSON.stringify({ currentPassword, newPassword }),
     })
   }
+
+  async deleteAccount(): Promise<{ message: string }> {
+    return this.request<{ message: string }>('/user/account', {
+      method: 'DELETE',
+    })
+  }
 }
 
 export const apiService = new ApiService()
