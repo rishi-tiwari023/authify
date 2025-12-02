@@ -5,9 +5,11 @@ import Login from './components/Login'
 import Signup from './components/Signup'
 import Dashboard from './components/Dashboard'
 import ProtectedRoute from './components/ProtectedRoute'
+import AdminRoute from './components/AdminRoute'
 import ForgotPassword from './components/ForgotPassword'
 import ResetPassword from './components/ResetPassword'
 import Profile from './components/Profile'
+import AdminDashboard from './components/AdminDashboard'
 
 const stats = [
   { label: 'Active users', value: 'null' },
@@ -64,6 +66,9 @@ function App() {
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/profile" element={<Profile />} />
+      </Route>
+      <Route element={<AdminRoute />}>
+        <Route path="/admin" element={<AdminDashboard />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
