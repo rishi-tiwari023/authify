@@ -241,6 +241,13 @@ class ApiService {
     
     return response
   }
+
+  async changePassword(currentPassword: string, newPassword: string): Promise<{ message: string }> {
+    return this.request<{ message: string }>('/user/password', {
+      method: 'PUT',
+      body: JSON.stringify({ currentPassword, newPassword }),
+    })
+  }
 }
 
 export const apiService = new ApiService()
