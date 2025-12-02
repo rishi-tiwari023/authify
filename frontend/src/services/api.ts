@@ -254,6 +254,10 @@ class ApiService {
       method: 'DELETE',
     })
   }
+
+  async listUsers(): Promise<User[]> {
+    return this.request<User[]>('/auth/users')
+  }
 }
 
 export const apiService = new ApiService()
