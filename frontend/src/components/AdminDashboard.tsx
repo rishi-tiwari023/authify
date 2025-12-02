@@ -5,8 +5,10 @@ import './Login.css'
 
 export default function AdminDashboard() {
   const [users, setUsers] = useState<User[]>([])
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -14,6 +16,7 @@ export default function AdminDashboard() {
         setLoading(true)
         const usersList = await apiService.listUsers()
         setUsers(usersList)
+        setFilteredUsers(usersList)
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load users')
       } finally {
@@ -23,6 +26,22 @@ export default function AdminDashboard() {
 
     fetchUsers()
   }, [])
+
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setFilteredUsers(users)
+      return
+    }
+
+    const query = searchQuery.toLowerCase().trim()
+    const filtered = users.filter(
+      (user) =>
+        user.name.toLowerCase().includes(query) ||
+        user.email.toLowerCase().includes(query) ||
+        user.role.toLowerCase().includes(query)
+    )
+    setFilteredUsers(filtered)
+  }, [searchQuery, users])
 
   if (loading) {
     return (
@@ -46,7 +65,35 @@ export default function AdminDashboard() {
           </div>
         )}
 
-        {users.length === 0 ? (
+        <div style={{ marginBottom: '1.5rem' }}>
+          <div className="form-group">
+            <label htmlFor="search" style={{ marginBottom: '0.5rem' }}>
+              Search Users
+            </label>
+            <input
+              id="search"
+              type="text"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Search by name, email, or role..."
+              style={{
+                padding: '0.85rem 1rem',
+                borderRadius: '0.75rem',
+                border: '1px solid rgba(148, 163, 184, 0.2)',
+                background: 'rgba(255, 255, 255, 0.05)',
+                color: '#e2e8f0',
+                fontSize: '1rem',
+                width: '100%',
+              }}
+            />
+          </div>
+        </div>
+
+        {filteredUsers.length === 0 && users.length > 0 ? (
+          <p className="auth-subtitle" style={{ textAlign: 'center', padding: '2rem' }}>
+            No users found matching your search.
+          </p>
+        ) : filteredUsers.length === 0 ? (
           <p className="auth-subtitle" style={{ textAlign: 'center', padding: '2rem' }}>
             No users found.
           </p>
@@ -108,7 +155,7 @@ export default function AdminDashboard() {
                 </tr>
               </thead>
               <tbody>
-                {users.map((user) => (
+                {filteredUsers.map((user) => (
                   <tr
                     key={user.id}
                     style={{
