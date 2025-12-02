@@ -44,6 +44,32 @@ export default function Dashboard() {
               >
                 View Profile
               </Link>
+              {user.role === 'ADMIN' && (
+                <Link
+                  to="/admin"
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    borderRadius: '0.5rem',
+                    background: 'rgba(99, 102, 241, 0.1)',
+                    border: '1px solid rgba(99, 102, 241, 0.3)',
+                    color: '#a5b4fc',
+                    textDecoration: 'none',
+                    textAlign: 'center',
+                    fontSize: '0.9rem',
+                    transition: 'all 200ms ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(99, 102, 241, 0.2)'
+                    e.currentTarget.style.borderColor = '#6366f1'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(99, 102, 241, 0.1)'
+                    e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.3)'
+                  }}
+                >
+                  Admin Dashboard
+                </Link>
+              )}
               <button type="button" className="auth-button" onClick={handleLogout}>
                 Log out
               </button>
