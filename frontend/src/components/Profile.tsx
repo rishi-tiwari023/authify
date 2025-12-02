@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { apiService } from '../services/api'
+import ChangePassword from './ChangePassword'
 import './Login.css'
 
 export default function Profile() {
@@ -15,6 +16,7 @@ export default function Profile() {
   const [success, setSuccess] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
+  const [showChangePassword, setShowChangePassword] = useState(false)
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -200,19 +202,51 @@ export default function Profile() {
           </button>
         </form>
 
-        <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+        <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={() => setShowChangePassword(!showChangePassword)}
+            style={{
+              padding: '0.75rem 1.5rem',
+              borderRadius: '0.5rem',
+              background: 'rgba(255, 255, 255, 0.05)',
+              border: '1px solid rgba(148, 163, 184, 0.2)',
+              color: '#a5b4fc',
+              fontSize: '0.9rem',
+              cursor: 'pointer',
+              transition: 'all 200ms ease',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'
+              e.currentTarget.style.borderColor = '#6366f1'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'
+              e.currentTarget.style.borderColor = 'rgba(148, 163, 184, 0.2)'
+            }}
+          >
+            {showChangePassword ? 'Hide Change Password' : 'Change Password'}
+          </button>
           <Link
             to="/dashboard"
             style={{
               color: '#a5b4fc',
               textDecoration: 'none',
               fontSize: '0.9rem',
+              padding: '0.75rem 1.5rem',
             }}
           >
             Back to Dashboard
           </Link>
         </div>
       </div>
+
+      {showChangePassword && (
+        <ChangePassword
+          onSuccess={() => setShowChangePassword(false)}
+          onCancel={() => setShowChangePassword(false)}
+        />
+      )}
     </div>
   )
 }
