@@ -153,7 +153,44 @@ export default function Dashboard() {
         <h2>Dashboard</h2>
         {isAuthenticated && user ? (
           <>
-            <p className="auth-subtitle">Welcome back, {user.name}.</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '2rem' }}>
+              {user.profileUrl ? (
+                <img
+                  src={user.profileUrl}
+                  alt={user.name}
+                  style={{
+                    width: '80px',
+                    height: '80px',
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                    border: '2px solid rgba(99, 102, 241, 0.3)',
+                  }}
+                />
+              ) : (
+                <div
+                  style={{
+                    width: '80px',
+                    height: '80px',
+                    borderRadius: '50%',
+                    background: 'linear-gradient(120deg, #6366f1, #8b5cf6)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '2rem',
+                    fontWeight: '600',
+                    color: '#fff',
+                    border: '2px solid rgba(99, 102, 241, 0.3)',
+                  }}
+                >
+                  {user.name.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div>
+                <p className="auth-subtitle" style={{ margin: 0 }}>
+                  Welcome back, {user.name}!
+                </p>
+              </div>
+            </div>
             <div
               style={{
                 marginTop: '2rem',
