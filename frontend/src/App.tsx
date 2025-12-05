@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import './App.css'
 import Footer from './components/Footer'
 import Login from './components/Login'
@@ -10,6 +10,7 @@ import ForgotPassword from './components/ForgotPassword'
 import ResetPassword from './components/ResetPassword'
 import Profile from './components/Profile'
 import AdminDashboard from './components/AdminDashboard'
+import { useAuth } from './contexts/AuthContext'
 
 const stats = [
   { label: 'Active users', value: 'null' },
@@ -76,6 +77,17 @@ function App() {
 }
 
 function LandingPage() {
+  const navigate = useNavigate()
+  const { isAuthenticated } = useAuth()
+
+  const handleLaunchDemo = () => {
+    if (isAuthenticated) {
+      navigate('/dashboard')
+    } else {
+      navigate('/login')
+    }
+  }
+
   return (
     <div className="app-shell">
       <header className="hero" role="banner">
@@ -88,7 +100,7 @@ function LandingPage() {
           focus on roadmap work, not auth edge cases.
         </p>
         <div className="hero-actions">
-          <button className="primary" type="button">Launch demo</button>
+          <button className="primary" type="button" onClick={handleLaunchDemo}>Launch demo</button>
           <button className="ghost" type="button">View docs</button>
         </div>
         <div className="hero-stats">
