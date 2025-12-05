@@ -1,5 +1,6 @@
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import './Login.css'
 
 export default function Dashboard() {
   const { user, isAuthenticated, logout } = useAuth()
@@ -12,7 +13,67 @@ export default function Dashboard() {
 
   return (
     <div className="auth-container">
-      <div className="auth-card">
+      <nav
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '1rem 2rem',
+          background: 'rgba(15, 23, 42, 0.8)',
+          backdropFilter: 'blur(12px)',
+          borderBottom: '1px solid rgba(148, 163, 184, 0.2)',
+        }}
+      >
+        <Link
+          to="/dashboard"
+          style={{
+            fontSize: '1.25rem',
+            fontWeight: '600',
+            color: '#e2e8f0',
+            textDecoration: 'none',
+          }}
+        >
+          Authify
+        </Link>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          {isAuthenticated && user && (
+            <>
+              <span style={{ color: '#cbd5f5', fontSize: '0.9rem' }}>
+                {user.name}
+              </span>
+              <button
+                type="button"
+                onClick={handleLogout}
+                style={{
+                  padding: '0.5rem 1rem',
+                  background: 'transparent',
+                  border: '1px solid rgba(148, 163, 184, 0.2)',
+                  color: '#cbd5f5',
+                  borderRadius: '0.5rem',
+                  fontSize: '0.9rem',
+                  cursor: 'pointer',
+                  transition: 'all 200ms ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'
+                  e.currentTarget.style.borderColor = '#6366f1'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent'
+                  e.currentTarget.style.borderColor = 'rgba(148, 163, 184, 0.2)'
+                }}
+              >
+                Logout
+              </button>
+            </>
+          )}
+        </div>
+      </nav>
+      <div className="auth-card" style={{ marginTop: '5rem' }}>
         <h2>Dashboard</h2>
         {isAuthenticated && user ? (
           <>
