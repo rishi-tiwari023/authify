@@ -35,6 +35,13 @@ export default function Dashboard() {
             fontWeight: '600',
             color: '#e2e8f0',
             textDecoration: 'none',
+            transition: 'color 200ms ease',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.color = '#a5b4fc'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.color = '#e2e8f0'
           }}
         >
           Authify
@@ -42,7 +49,76 @@ export default function Dashboard() {
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
           {isAuthenticated && user && (
             <>
-              <span style={{ color: '#cbd5f5', fontSize: '0.9rem' }}>
+              <Link
+                to="/profile"
+                style={{
+                  padding: '0.5rem 1rem',
+                  color: '#cbd5f5',
+                  textDecoration: 'none',
+                  fontSize: '0.9rem',
+                  borderRadius: '0.5rem',
+                  transition: 'all 200ms ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'
+                  e.currentTarget.style.color = '#e2e8f0'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent'
+                  e.currentTarget.style.color = '#cbd5f5'
+                }}
+              >
+                Profile
+              </Link>
+              <Link
+                to="/profile"
+                style={{
+                  padding: '0.5rem 1rem',
+                  color: '#cbd5f5',
+                  textDecoration: 'none',
+                  fontSize: '0.9rem',
+                  borderRadius: '0.5rem',
+                  transition: 'all 200ms ease',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'
+                  e.currentTarget.style.color = '#e2e8f0'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent'
+                  e.currentTarget.style.color = '#cbd5f5'
+                }}
+              >
+                Settings
+              </Link>
+              {user.role === 'ADMIN' && (
+                <Link
+                  to="/admin"
+                  style={{
+                    padding: '0.5rem 1rem',
+                    background: 'rgba(99, 102, 241, 0.1)',
+                    border: '1px solid rgba(99, 102, 241, 0.3)',
+                    color: '#a5b4fc',
+                    textDecoration: 'none',
+                    fontSize: '0.9rem',
+                    borderRadius: '0.5rem',
+                    transition: 'all 200ms ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'rgba(99, 102, 241, 0.2)'
+                    e.currentTarget.style.borderColor = '#6366f1'
+                    e.currentTarget.style.color = '#c7d2fe'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(99, 102, 241, 0.1)'
+                    e.currentTarget.style.borderColor = 'rgba(99, 102, 241, 0.3)'
+                    e.currentTarget.style.color = '#a5b4fc'
+                  }}
+                >
+                  Admin
+                </Link>
+              )}
+              <span style={{ color: '#cbd5f5', fontSize: '0.9rem', marginLeft: '0.5rem' }}>
                 {user.name}
               </span>
               <button
