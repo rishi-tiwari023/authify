@@ -50,12 +50,18 @@ export function sanitizationMiddleware(req: Request, _res: Response, next: NextF
     req.body = sanitizeRequestBody(req.body);
   }
 
-  if (req.query) {
-    req.query = sanitizeRequestQuery(req.query);
+  // Sanitize query parameters (create sanitized copy and attach to request)
+  if (req.query && typeof req.query === 'object') {
+    const sanitizedQuery = sanitizeRequestQuery(req.query);
+    // Attach sanitized query to request object for potential use
+    (req as any).sanitizedQuery = sanitizedQuery;
   }
 
-  if (req.params) {
-    req.params = sanitizeRequestParams(req.params);
+  // Sanitize route parameters (create sanitized copy and attach to request)
+  if (req.params && typeof req.params === 'object') {
+    const sanitizedParams = sanitizeRequestParams(req.params);
+    // Attach sanitized params to request object for potential use
+    (req as any).sanitizedParams = sanitizedParams;
   }
 
   // Common special cases
