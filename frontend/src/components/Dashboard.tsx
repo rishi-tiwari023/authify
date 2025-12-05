@@ -213,6 +213,16 @@ export default function Dashboard() {
                     {user.role}
                   </p>
                 </div>
+                <div>
+                  <span style={{ color: '#94a3b8', fontSize: '0.85rem' }}>Member since</span>
+                  <p style={{ color: '#e2e8f0', margin: '0.25rem 0 0 0', fontSize: '1rem' }}>
+                    {new Date(user.createdAt).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                    })}
+                  </p>
+                </div>
               </div>
             </div>
           </>

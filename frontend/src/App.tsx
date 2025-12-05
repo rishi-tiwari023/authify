@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import './App.css'
 import Footer from './components/Footer'
+import Navigation from './components/Navigation'
 import Login from './components/Login'
 import Signup from './components/Signup'
 import Dashboard from './components/Dashboard'
@@ -90,6 +91,7 @@ function LandingPage() {
 
   return (
     <div className="app-shell">
+      <Navigation />
       <header className="hero" role="banner">
         <span className="hero-badge">Production-ready auth</span>
         <h1 className="hero-title">
