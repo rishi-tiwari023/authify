@@ -13,9 +13,9 @@ import AdminDashboard from './components/AdminDashboard'
 import { useAuth } from './contexts/AuthContext'
 
 const stats = [
-  { label: 'Active users', value: 'null' },
+  { label: 'Active users', value: '—' },
   { label: 'Auth uptime', value: '99.99%' },
-  { label: 'SLA response (mins)', value: 'null' },
+  { label: 'SLA response (mins)', value: '< 1' },
 ]
 
 const features = [
@@ -196,7 +196,7 @@ function LandingPage() {
               <p className="stat-label">Engineering teams onboarded</p>
             </div>
             <div>
-              <p className="stat-value">null</p>
+              <p className="stat-value">15ms</p>
               <p className="stat-label">Median token refresh</p>
             </div>
             <div>
