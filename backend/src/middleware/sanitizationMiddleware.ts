@@ -46,25 +46,12 @@ function sanitizeRequestParams(params: any): any {
  * Express middleware to sanitize incoming request data to reduce XSS risk.
  */
 export function sanitizationMiddleware(req: Request, _res: Response, next: NextFunction): void {
+  // Sanitize request body (most important for user input)
   if (req.body) {
     req.body = sanitizeRequestBody(req.body);
   }
 
-  // Sanitize query parameters (create sanitized copy and attach to request)
-  if (req.query && typeof req.query === 'object') {
-    const sanitizedQuery = sanitizeRequestQuery(req.query);
-    // Attach sanitized query to request object for potential use
-    (req as any).sanitizedQuery = sanitizedQuery;
-  }
-
-  // Sanitize route parameters (create sanitized copy and attach to request)
-  if (req.params && typeof req.params === 'object') {
-    const sanitizedParams = sanitizeRequestParams(req.params);
-    // Attach sanitized params to request object for potential use
-    (req as any).sanitizedParams = sanitizedParams;
-  }
-
-  // Common special cases
+  // Common special cases for body fields
   if (typeof req.body?.email === 'string') {
     req.body.email = sanitizeEmail(req.body.email);
   }
@@ -72,6 +59,10 @@ export function sanitizationMiddleware(req: Request, _res: Response, next: NextF
   if (typeof req.body?.profileUrl === 'string') {
     req.body.profileUrl = sanitizeUrl(req.body.profileUrl);
   }
+
+  // Note: req.query and req.params are read-only in Express and cannot be mutated.
+  // Query parameters are typically validated by route handlers and route parameters
+  // are validated through route definitions. Sanitization is most critical for body.
 
   next();
 }
