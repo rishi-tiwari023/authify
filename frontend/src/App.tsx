@@ -101,7 +101,35 @@ function LandingPage() {
         </p>
         <div className="hero-actions">
           <button className="primary" type="button" onClick={handleLaunchDemo}>Launch demo</button>
-          <button className="ghost" type="button">View docs</button>
+          <a
+            href="https://github.com/rishi-tiwari023"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ghost"
+            style={{
+              padding: '0.85rem 1.75rem',
+              borderRadius: '999px',
+              border: '1px solid rgba(226, 232, 240, 0.35)',
+              background: 'transparent',
+              color: '#e2e8f0',
+              textDecoration: 'none',
+              fontSize: '1rem',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'transform 200ms ease, opacity 200ms ease',
+              display: 'inline-block',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = 'translateY(-2px)'
+              e.currentTarget.style.opacity = '0.9'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.opacity = '1'
+            }}
+          >
+            View docs
+          </a>
         </div>
         <div className="hero-stats">
           {stats.map((stat) => (
