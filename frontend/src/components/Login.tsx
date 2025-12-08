@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { getErrorMessage } from '../utils/errorMessages'
 import './Login.css'
 
 export default function Login() {
@@ -38,7 +39,7 @@ export default function Login() {
       await login(email, password)
       navigate('/dashboard')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to sign in.')
+      setError(getErrorMessage(err))
     } finally {
       setLoading(false)
     }
