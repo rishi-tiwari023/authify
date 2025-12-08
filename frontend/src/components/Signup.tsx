@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { getErrorMessage } from '../utils/errorMessages'
 
 export default function Signup() {
   const [name, setName] = useState('')
@@ -44,7 +45,7 @@ export default function Signup() {
       await signup(name.trim(), email.trim(), password)
       navigate('/dashboard')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to create account.')
+      setError(getErrorMessage(err))
     } finally {
       setLoading(false)
     }
