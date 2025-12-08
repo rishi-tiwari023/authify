@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { apiService } from '../services/api'
 import { getErrorMessage } from '../utils/errorMessages'
+import PasswordStrengthIndicator from './PasswordStrengthIndicator'
 import './Login.css'
 
 interface ChangePasswordProps {
@@ -135,9 +136,7 @@ export default function ChangePassword({ onSuccess, onCancel }: ChangePasswordPr
             required
             minLength={8}
           />
-          <small style={{ color: '#94a3b8', fontSize: '0.85rem', marginTop: '0.25rem' }}>
-            Must be at least 8 characters with uppercase, lowercase, number, and special character
-          </small>
+          <PasswordStrengthIndicator password={newPassword} />
         </div>
 
         <div className="form-group">

@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { getErrorMessage } from '../utils/errorMessages'
+import PasswordStrengthIndicator from './PasswordStrengthIndicator'
 
 export default function Signup() {
   const [name, setName] = useState('')
@@ -99,6 +100,7 @@ export default function Signup() {
               required
               minLength={8}
             />
+            <PasswordStrengthIndicator password={password} />
           </label>
 
           <label className="form-group">
