@@ -146,11 +146,27 @@ export default function ChangePassword({ onSuccess, onCancel }: ChangePasswordPr
             type="password"
             value={confirmPassword}
             onChange={(event) => setConfirmPassword(event.target.value)}
+            onBlur={() => setConfirmPasswordTouched(true)}
             placeholder="Confirm new password"
             disabled={loading}
             required
             minLength={8}
           />
+          {confirmPasswordTouched && confirmPassword && (
+            <div style={{ marginTop: '0.25rem' }}>
+              {newPassword === confirmPassword ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                  <span style={{ color: '#22c55e', fontSize: '0.75rem' }}>✓</span>
+                  <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>Passwords match</span>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                  <span style={{ color: '#ef4444', fontSize: '0.75rem' }}>⚠</span>
+                  <span style={{ color: '#f87171', fontSize: '0.75rem' }}>Passwords do not match</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div style={{ display: 'flex', gap: '1rem' }}>

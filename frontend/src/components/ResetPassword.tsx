@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { apiService } from '../services/api'
 import { getErrorMessage } from '../utils/errorMessages'
+import PasswordStrengthIndicator from './PasswordStrengthIndicator'
 import './Login.css'
 
 export default function ResetPassword() {
@@ -10,6 +11,7 @@ export default function ResetPassword() {
   const [token, setToken] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [confirmPasswordTouched, setConfirmPasswordTouched] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -120,6 +122,7 @@ export default function ResetPassword() {
               required
               minLength={8}
             />
+            <PasswordStrengthIndicator password={newPassword} />
           </div>
 
           <div className="form-group">
@@ -129,11 +132,27 @@ export default function ResetPassword() {
               type="password"
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
+              onBlur={() => setConfirmPasswordTouched(true)}
               placeholder="Confirm your new password"
               disabled={loading || !token}
               required
               minLength={8}
             />
+            {confirmPasswordTouched && confirmPassword && (
+              <div style={{ marginTop: '0.25rem' }}>
+                {newPassword === confirmPassword ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <span style={{ color: '#22c55e', fontSize: '0.75rem' }}>✓</span>
+                    <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>Passwords match</span>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <span style={{ color: '#ef4444', fontSize: '0.75rem' }}>⚠</span>
+                    <span style={{ color: '#f87171', fontSize: '0.75rem' }}>Passwords do not match</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <button type="submit" className="auth-button" disabled={loading || !token}>

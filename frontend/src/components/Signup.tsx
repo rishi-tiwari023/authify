@@ -4,12 +4,15 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { getErrorMessage } from '../utils/errorMessages'
 import PasswordStrengthIndicator from './PasswordStrengthIndicator'
+import EmailValidationFeedback from './EmailValidationFeedback'
 
 export default function Signup() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
+  const [emailTouched, setEmailTouched] = useState(false)
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [confirmPasswordTouched, setConfirmPasswordTouched] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const { signup } = useAuth()
@@ -100,10 +103,12 @@ export default function Signup() {
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
+              onBlur={() => setEmailTouched(true)}
               placeholder="you@example.com"
               disabled={loading}
               required
             />
+            <EmailValidationFeedback email={email} touched={emailTouched} />
           </label>
 
           <label className="form-group">
@@ -126,11 +131,27 @@ export default function Signup() {
               type="password"
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
+              onBlur={() => setConfirmPasswordTouched(true)}
               placeholder="Repeat your password"
               disabled={loading}
               required
               minLength={8}
             />
+            {confirmPasswordTouched && confirmPassword && (
+              <div style={{ marginTop: '0.25rem' }}>
+                {password === confirmPassword ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <span style={{ color: '#22c55e', fontSize: '0.75rem' }}>✓</span>
+                    <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>Passwords match</span>
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                    <span style={{ color: '#ef4444', fontSize: '0.75rem' }}>⚠</span>
+                    <span style={{ color: '#f87171', fontSize: '0.75rem' }}>Passwords do not match</span>
+                  </div>
+                )}
+              </div>
+            )}
           </label>
 
           <button type="submit" className="auth-button" disabled={loading}>

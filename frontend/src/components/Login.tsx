@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { getErrorMessage } from '../utils/errorMessages'
+import EmailValidationFeedback from './EmailValidationFeedback'
 import './Login.css'
 
 export default function Login() {
@@ -10,6 +11,7 @@ export default function Login() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [emailTouched, setEmailTouched] = useState(false)
   const { login } = useAuth()
   const navigate = useNavigate()
 
@@ -65,10 +67,12 @@ export default function Login() {
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
+              onBlur={() => setEmailTouched(true)}
               placeholder="you@example.com"
               disabled={loading}
               required
             />
+            <EmailValidationFeedback email={email} touched={emailTouched} />
           </div>
 
           <div className="form-group">
