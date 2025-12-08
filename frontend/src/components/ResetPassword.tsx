@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { apiService } from '../services/api'
+import { getErrorMessage } from '../utils/errorMessages'
 import './Login.css'
 
 export default function ResetPassword() {
@@ -55,7 +56,7 @@ export default function ResetPassword() {
         navigate('/login')
       }, 2000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to reset password. The token may be invalid or expired.')
+      setError(getErrorMessage(err))
     } finally {
       setLoading(false)
     }

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { apiService } from '../services/api'
+import { getErrorMessage } from '../utils/errorMessages'
 import './Login.css'
 
 interface ChangePasswordProps {
@@ -75,7 +76,7 @@ export default function ChangePassword({ onSuccess, onCancel }: ChangePasswordPr
         }
       }, 3000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to change password')
+      setError(getErrorMessage(err))
     } finally {
       setLoading(false)
     }

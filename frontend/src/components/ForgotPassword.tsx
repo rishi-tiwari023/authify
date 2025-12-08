@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { apiService } from '../services/api'
+import { getErrorMessage } from '../utils/errorMessages'
 import './Login.css'
 
 export default function ForgotPassword() {
@@ -33,7 +34,7 @@ export default function ForgotPassword() {
       await apiService.forgotPassword(email)
       setSuccess(true)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unable to process request. Please try again.')
+      setError(getErrorMessage(err))
     } finally {
       setLoading(false)
     }

@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { apiService } from '../services/api'
+import { getErrorMessage } from '../utils/errorMessages'
 import ChangePassword from './ChangePassword'
 import './Login.css'
 
@@ -29,7 +30,7 @@ export default function Profile() {
         setEmail(profile.email)
         setProfileUrl(profile.profileUrl || '')
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load profile')
+        setError(getErrorMessage(err))
       } finally {
         setFetching(false)
       }
@@ -90,7 +91,7 @@ export default function Profile() {
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(null), 3000)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update profile')
+      setError(getErrorMessage(err))
     } finally {
       setLoading(false)
     }
@@ -104,7 +105,7 @@ export default function Profile() {
       await logout()
       navigate('/')
     } catch (err) {
-      setDeleteError(err instanceof Error ? err.message : 'Failed to delete account')
+      setDeleteError(getErrorMessage(err))
       setDeleting(false)
     }
   }

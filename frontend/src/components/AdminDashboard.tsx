@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { apiService, type User } from '../services/api'
+import { getErrorMessage } from '../utils/errorMessages'
 import './Login.css'
 
 export default function AdminDashboard() {
@@ -18,7 +19,7 @@ export default function AdminDashboard() {
         setUsers(usersList)
         setFilteredUsers(usersList)
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load users')
+        setError(getErrorMessage(err))
       } finally {
         setLoading(false)
       }
