@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { apiService } from '../services/api'
 import { getErrorMessage } from '../utils/errorMessages'
 import ChangePassword from './ChangePassword'
+import Loading from './Loading'
 import './Login.css'
 
 export default function Profile() {
@@ -111,13 +112,7 @@ export default function Profile() {
   }
 
   if (fetching) {
-    return (
-      <div className="auth-container">
-        <div className="auth-card">
-          <p className="auth-subtitle">Loading profile...</p>
-        </div>
-      </div>
-    )
+    return <Loading message="Loading profile..." />
   }
 
   return (

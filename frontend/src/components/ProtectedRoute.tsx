@@ -1,18 +1,13 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import Loading from './Loading'
 
 export default function ProtectedRoute() {
   const { isAuthenticated, loading } = useAuth()
   const location = useLocation()
 
   if (loading) {
-    return (
-      <div className="auth-container">
-        <div className="auth-card">
-          <p className="auth-subtitle">Checking your session…</p>
-        </div>
-      </div>
-    )
+    return <Loading message="Checking your session…" />
   }
 
   if (!isAuthenticated) {

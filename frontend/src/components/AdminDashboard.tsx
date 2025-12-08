@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { apiService, type User } from '../services/api'
 import { getErrorMessage } from '../utils/errorMessages'
+import Loading from './Loading'
 import './Login.css'
 
 export default function AdminDashboard() {
@@ -45,13 +46,7 @@ export default function AdminDashboard() {
   }, [searchQuery, users])
 
   if (loading) {
-    return (
-      <div className="auth-container">
-        <div className="auth-card" style={{ maxWidth: '900px' }}>
-          <p className="auth-subtitle">Loading users...</p>
-        </div>
-      </div>
-    )
+    return <Loading message="Loading users..." />
   }
 
   return (
