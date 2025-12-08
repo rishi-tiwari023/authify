@@ -79,10 +79,19 @@ class ApiService {
       headers['Authorization'] = `Bearer ${token}`
     }
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      ...options,
-      headers,
-    })
+    let response: Response
+    try {
+      response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        ...options,
+        headers,
+      })
+    } catch (fetchError) {
+      // Handle network errors (no connection, timeout, etc.)
+      if (fetchError instanceof TypeError && fetchError.message.includes('fetch')) {
+        throw new Error('Network error. Please check your internet connection and try again.')
+      }
+      throw new Error('Failed to connect to server. Please try again later.')
+    }
 
     // Handle 401 errors with automatic token refresh
     if (response.status === 401 && retryOn401 && token && !endpoint.includes('/auth/refresh')) {
