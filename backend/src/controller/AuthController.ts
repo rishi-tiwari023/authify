@@ -1,19 +1,32 @@
 import { Request, Response } from 'express';
 import { AuthService } from '../service/AuthService';
 import jwt from 'jsonwebtoken';
+import type { SignOptions, Secret } from 'jsonwebtoken';
 import { AuthRequest } from '../middleware/authMiddleware';
 import { UserRepository } from '../repository/UserRepository';
 import { ValidationError, NotFoundError } from '../utils/errors';
 
 export class AuthController {
   private authService: AuthService;
-  private readonly jwtSecret: string;
+  private readonly jwtSecret: Secret;
+  private readonly jwtExpiresIn: SignOptions['expiresIn'];
   private userRepository: UserRepository;
 
   constructor() {
     this.authService = new AuthService();
     this.jwtSecret = process.env.JWT_SECRET || 'my-secret-key-change-in-production';
+    this.jwtExpiresIn = (process.env.JWT_EXPIRATION || '1h') as SignOptions['expiresIn'];
     this.userRepository = new UserRepository();
+  }
+
+  private signToken(user: { id: string; email: string; role: string }) {
+    const signOptions: SignOptions = { expiresIn: this.jwtExpiresIn };
+
+    return jwt.sign(
+      { id: user.id, email: user.email, role: user.role },
+      this.jwtSecret,
+      signOptions
+    );
   }
 
   async signup(req: Request, res: Response): Promise<void> {
@@ -26,7 +39,12 @@ export class AuthController {
       }
 
       const user = await this.authService.signup({ name, email, password });
-      res.status(201).json({ user: user.toSafeJSON() });
+      const token = this.signToken({ id: user.id, email: user.email, role: user.role });
+
+      res.status(201).json({
+        user: user.toSafeJSON(),
+        token,
+      });
     } catch (error) {
       if (error instanceof ValidationError) {
         res.status(error.statusCode).json({ error: error.message });
@@ -51,12 +69,7 @@ export class AuthController {
         return;
       }
 
-      // Generate JWT token
-      const token = jwt.sign(
-        { id: user.id, email: user.email, role: user.role },
-        this.jwtSecret,
-        { expiresIn: '1h' }
-      );
+      const token = this.signToken({ id: user.id, email: user.email, role: user.role });
 
       res.json({
         user: user.toSafeJSON(),
@@ -102,12 +115,7 @@ export class AuthController {
         return;
       }
 
-      // Generate new JWT token
-      const token = jwt.sign(
-        { id: user.id, email: user.email, role: user.role },
-        this.jwtSecret,
-        { expiresIn: '1h' }
-      );
+      const token = this.signToken({ id: user.id, email: user.email, role: user.role });
 
       res.json({
         token,
