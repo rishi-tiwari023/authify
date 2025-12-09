@@ -14,7 +14,11 @@ export class AuthController {
 
   constructor() {
     this.authService = new AuthService();
-    this.jwtSecret = process.env.JWT_SECRET || 'my-secret-key-change-in-production';
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      throw new Error('JWT_SECRET is not configured');
+    }
+    this.jwtSecret = secret;
     this.jwtExpiresIn = (process.env.JWT_EXPIRATION || '1h') as SignOptions['expiresIn'];
     this.userRepository = new UserRepository();
   }
