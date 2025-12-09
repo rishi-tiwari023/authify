@@ -32,11 +32,11 @@ router.post('/login', authRateLimit, validateBody(loginSchema), (req, res) => au
 
 /**
  * @route POST /api/auth/refresh
- * @desc Refresh JWT token
- * @access Private
- * @header Authorization: Bearer <token>
+ * @desc Refresh JWT token using refresh token
+ * @access Public (uses refresh token validation)
+ * @body {string} refreshToken - Refresh token
  */
-router.post('/refresh', authMiddleware, (req, res) => authController.refreshToken(req as any, res));
+router.post('/refresh', (req, res) => authController.refreshToken(req, res));
 
 /**
  * @route GET /api/auth/me
