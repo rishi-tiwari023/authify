@@ -1,5 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import type { JwtPayload, Secret } from 'jsonwebtoken';
+
+const jwtSecret: Secret = (() => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    throw new Error('JWT_SECRET is not configured');
+  }
+  return secret;
+})();
 
 export interface AuthRequest extends Request {
   user?: {
@@ -18,11 +27,20 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
   }
 
   const token = authHeader.substring(7); // Remove 'Bearer ' prefix
-  const jwtSecret = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
   try {
-    const decoded = jwt.verify(token, jwtSecret) as { id: string; email: string; role: string };
-    req.user = decoded;
+    const decoded = jwt.verify(token, jwtSecret) as JwtPayload | string;
+
+    if (typeof decoded === 'string' || !decoded || !decoded.id || !decoded.email || !decoded.role) {
+      res.status(401).json({ error: 'Invalid or expired token' });
+      return;
+    }
+
+    req.user = {
+      id: decoded.id as string,
+      email: decoded.email as string,
+      role: decoded.role as string,
+    };
     next();
   } catch (error) {
     res.status(401).json({ error: 'Invalid or expired token' });
