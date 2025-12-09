@@ -30,6 +30,28 @@ class ApiService {
   private isRefreshing = false
   private refreshPromise: Promise<LoginResponse> | null = null
 
+  /**
+   * Determine if the current auth token is near expiry and should be refreshed.
+   * Uses a 5 minute threshold by default to refresh proactively.
+   */
+  needsTokenRefresh(thresholdMinutes = 5): boolean {
+    const token = this.getAuthToken()
+    return this.isTokenExpiringSoon(token, thresholdMinutes)
+  }
+
+  /**
+   * Refresh the token if it is expiring soon. Swallows errors so callers
+   * can attempt best-effort refresh without breaking flows.
+   */
+  async ensureTokenFresh(thresholdMinutes = 5): Promise<void> {
+    if (!this.needsTokenRefresh(thresholdMinutes)) return
+    try {
+      await this.refreshToken()
+    } catch {
+      // Let caller handle auth state if needed
+    }
+  }
+
   private getAuthToken(): string | null {
     return localStorage.getItem('auth_token')
   }
@@ -161,6 +183,15 @@ class ApiService {
 
   async getCurrentUser(): Promise<User> {
     return this.request<User>('/auth/me')
+  }
+
+  /**
+   * Fetch the latest user from the API and store it locally.
+   */
+  async refreshUser(): Promise<User> {
+    const current = await this.getCurrentUser()
+    localStorage.setItem('user', JSON.stringify(current))
+    return current
   }
 
   async refreshToken(): Promise<LoginResponse> {
