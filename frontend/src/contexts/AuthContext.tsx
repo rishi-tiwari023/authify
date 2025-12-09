@@ -3,6 +3,12 @@ import type { ReactNode } from 'react'
 import { apiService } from '../services/api'
 import type { User } from '../services/api'
 
+interface UpdateProfilePayload {
+  name?: string
+  email?: string
+  profileUrl?: string | null
+}
+
 interface AuthContextType {
   user: User | null
   loading: boolean
@@ -10,6 +16,8 @@ interface AuthContextType {
   signup: (name: string, email: string, password: string) => Promise<void>
   logout: () => Promise<void>
   isAuthenticated: boolean
+  refreshUser: () => Promise<void>
+  updateProfile: (data: UpdateProfilePayload) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -19,38 +27,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Check if user is already logged in
-    const storedUser = apiService.getStoredUser()
-    if (storedUser && apiService.isAuthenticated()) {
-      setUser(storedUser)
-      // Verify token is still valid and refresh if needed
-      apiService.getCurrentUser()
-        .then((currentUser) => {
-          setUser(currentUser)
-          localStorage.setItem('user', JSON.stringify(currentUser))
-        })
-        .catch(async (error) => {
-          // If token is invalid, try to refresh it
-          if (error.message.includes('Session expired') || error.message.includes('401')) {
-            try {
-              const refreshResponse = await apiService.refreshToken()
-              const refreshedUser = await apiService.getCurrentUser()
-              setUser(refreshedUser)
-              localStorage.setItem('user', JSON.stringify(refreshedUser))
-            } catch {
-              // Refresh failed, clear storage
-              apiService.logout()
-              setUser(null)
-            }
-          } else {
-            // Other errors, clear storage
-            apiService.logout()
+    let isMounted = true
+
+    const initialize = async () => {
+      const storedUser = apiService.getStoredUser()
+
+      if (storedUser && apiService.isAuthenticated()) {
+        setUser(storedUser)
+        try {
+          await apiService.ensureTokenFresh()
+          const currentUser = await apiService.refreshUser()
+          if (isMounted) {
+            setUser(currentUser)
+          }
+        } catch {
+          await apiService.logout()
+          if (isMounted) {
             setUser(null)
           }
-        })
-        .finally(() => setLoading(false))
-    } else {
-      setLoading(false)
+        } finally {
+          if (isMounted) {
+            setLoading(false)
+          }
+        }
+      } else {
+        setLoading(false)
+      }
+    }
+
+    initialize()
+
+    // Proactively refresh token on an interval to keep sessions alive
+    const refreshInterval = setInterval(() => {
+      apiService.ensureTokenFresh().catch(async () => {
+        await apiService.logout()
+        if (isMounted) {
+          setUser(null)
+        }
+      })
+    }, 4 * 60 * 1000) // every 4 minutes
+
+    return () => {
+      isMounted = false
+      clearInterval(refreshInterval)
     }
   }, [])
 
@@ -69,6 +88,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null)
   }
 
+  const refreshUser = async () => {
+    const updatedUser = await apiService.refreshUser()
+    setUser(updatedUser)
+  }
+
+  const updateProfile = async (data: UpdateProfilePayload) => {
+    const updated = await apiService.updateProfile(data)
+    setUser(updated)
+  }
+
   const value: AuthContextType = {
     user,
     loading,
@@ -76,6 +105,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     signup,
     logout,
     isAuthenticated: !!user,
+    refreshUser,
+    updateProfile,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
