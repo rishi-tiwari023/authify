@@ -10,16 +10,26 @@ export class AuthController {
   private authService: AuthService;
   private readonly jwtSecret: Secret;
   private readonly jwtExpiresIn: SignOptions['expiresIn'];
+  private readonly refreshSecret: Secret;
+  private readonly refreshExpiresIn: SignOptions['expiresIn'];
   private userRepository: UserRepository;
 
   constructor() {
     this.authService = new AuthService();
-    const secret = process.env.JWT_SECRET;
-    if (!secret) {
+    const accessSecret = process.env.JWT_SECRET;
+    const refreshSecret = process.env.REFRESH_TOKEN_SECRET;
+
+    if (!accessSecret) {
       throw new Error('JWT_SECRET is not configured');
     }
-    this.jwtSecret = secret;
-    this.jwtExpiresIn = (process.env.JWT_EXPIRATION || '1h') as SignOptions['expiresIn'];
+    if (!refreshSecret) {
+      throw new Error('REFRESH_TOKEN_SECRET is not configured');
+    }
+
+    this.jwtSecret = accessSecret;
+    this.jwtExpiresIn = (process.env.JWT_EXPIRATION || '15m') as SignOptions['expiresIn'];
+    this.refreshSecret = refreshSecret;
+    this.refreshExpiresIn = (process.env.REFRESH_TOKEN_EXPIRATION || '7d') as SignOptions['expiresIn'];
     this.userRepository = new UserRepository();
   }
 
@@ -29,6 +39,16 @@ export class AuthController {
     return jwt.sign(
       { id: user.id, email: user.email, role: user.role },
       this.jwtSecret,
+      signOptions
+    );
+  }
+
+  private signRefreshToken(user: { id: string; email: string; role: string }) {
+    const signOptions: SignOptions = { expiresIn: this.refreshExpiresIn };
+
+    return jwt.sign(
+      { id: user.id, email: user.email, role: user.role },
+      this.refreshSecret,
       signOptions
     );
   }
@@ -44,10 +64,12 @@ export class AuthController {
 
       const user = await this.authService.signup({ name, email, password });
       const token = this.signToken({ id: user.id, email: user.email, role: user.role });
+      const refreshToken = this.signRefreshToken({ id: user.id, email: user.email, role: user.role });
 
       res.status(201).json({
         user: user.toSafeJSON(),
         token,
+        refreshToken,
       });
     } catch (error) {
       if (error instanceof ValidationError) {
@@ -74,10 +96,12 @@ export class AuthController {
       }
 
       const token = this.signToken({ id: user.id, email: user.email, role: user.role });
+      const refreshToken = this.signRefreshToken({ id: user.id, email: user.email, role: user.role });
 
       res.json({
         user: user.toSafeJSON(),
         token,
+        refreshToken,
       });
     } catch (error) {
       if (error instanceof ValidationError) {
@@ -106,23 +130,35 @@ export class AuthController {
     res.json(users.map(u => u.toSafeJSON()));
   }
 
-  async refreshToken(req: AuthRequest, res: Response): Promise<void> {
+  async refreshToken(req: Request, res: Response): Promise<void> {
     try {
-      if (!req.user) {
-        res.status(401).json({ error: 'Authentication required' });
+      const providedToken = req.body?.refreshToken || req.headers['authorization']?.replace('Bearer ', '');
+
+      if (!providedToken) {
+        res.status(401).json({ error: 'Refresh token required' });
         return;
       }
 
-      const user = await this.userRepository.findById(req.user.id);
+      const decoded = jwt.verify(providedToken, this.refreshSecret) as jwt.JwtPayload;
+      const userId = decoded?.id as string | undefined;
+
+      if (!userId) {
+        res.status(401).json({ error: 'Invalid refresh token' });
+        return;
+      }
+
+      const user = await this.userRepository.findById(userId);
       if (!user) {
         res.status(404).json({ error: 'User not found' });
         return;
       }
 
       const token = this.signToken({ id: user.id, email: user.email, role: user.role });
+      const newRefreshToken = this.signRefreshToken({ id: user.id, email: user.email, role: user.role });
 
       res.json({
         token,
+        refreshToken: newRefreshToken,
         user: user.toSafeJSON(),
       });
     } catch (error) {
