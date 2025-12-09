@@ -13,6 +13,7 @@ export interface User {
 export interface LoginResponse {
   user: User
   token: string
+  refreshToken?: string
 }
 
 export interface SignupData {
@@ -29,6 +30,8 @@ export interface LoginData {
 class ApiService {
   private isRefreshing = false
   private refreshPromise: Promise<LoginResponse> | null = null
+  private readonly ACCESS_TOKEN_KEY = 'auth_token'
+  private readonly REFRESH_TOKEN_KEY = 'refresh_token'
 
   /**
    * Determine if the current auth token is near expiry and should be refreshed.
@@ -53,7 +56,11 @@ class ApiService {
   }
 
   private getAuthToken(): string | null {
-    return localStorage.getItem('auth_token')
+    return localStorage.getItem(this.ACCESS_TOKEN_KEY)
+  }
+
+  private getRefreshToken(): string | null {
+    return localStorage.getItem(this.REFRESH_TOKEN_KEY)
   }
 
   private decodeToken(token: string): { exp?: number } | null {
@@ -155,8 +162,11 @@ class ApiService {
     })
     
     if (response.token) {
-      localStorage.setItem('auth_token', response.token)
+      localStorage.setItem(this.ACCESS_TOKEN_KEY, response.token)
       localStorage.setItem('user', JSON.stringify(response.user))
+      if (response.refreshToken) {
+        localStorage.setItem(this.REFRESH_TOKEN_KEY, response.refreshToken)
+      }
     }
     
     return response
@@ -169,15 +179,19 @@ class ApiService {
     })
     
     if (response.token) {
-      localStorage.setItem('auth_token', response.token)
+      localStorage.setItem(this.ACCESS_TOKEN_KEY, response.token)
       localStorage.setItem('user', JSON.stringify(response.user))
+      if (response.refreshToken) {
+        localStorage.setItem(this.REFRESH_TOKEN_KEY, response.refreshToken)
+      }
     }
     
     return response
   }
 
   async logout(): Promise<void> {
-    localStorage.removeItem('auth_token')
+    localStorage.removeItem(this.ACCESS_TOKEN_KEY)
+    localStorage.removeItem(this.REFRESH_TOKEN_KEY)
     localStorage.removeItem('user')
   }
 
@@ -200,22 +214,21 @@ class ApiService {
       return this.refreshPromise
     }
 
+    const existingRefresh = this.getRefreshToken()
+    if (!existingRefresh) {
+      this.logout()
+      throw new Error('No refresh token available')
+    }
+
     this.isRefreshing = true
     this.refreshPromise = (async () => {
       try {
-        const token = this.getAuthToken()
-        if (!token) {
-          throw new Error('No token to refresh')
-        }
-
-        const headers: Record<string, string> = {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        }
-
         const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
           method: 'POST',
-          headers,
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ refreshToken: existingRefresh }),
         })
 
         if (!response.ok) {
@@ -225,9 +238,12 @@ class ApiService {
         const data = await response.json() as LoginResponse
         
         if (data.token) {
-          localStorage.setItem('auth_token', data.token)
+          localStorage.setItem(this.ACCESS_TOKEN_KEY, data.token)
           if (data.user) {
             localStorage.setItem('user', JSON.stringify(data.user))
+          }
+          if (data.refreshToken) {
+            localStorage.setItem(this.REFRESH_TOKEN_KEY, data.refreshToken)
           }
         }
         
