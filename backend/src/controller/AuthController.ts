@@ -5,6 +5,7 @@ import type { SignOptions, Secret } from 'jsonwebtoken';
 import { AuthRequest } from '../middleware/authMiddleware';
 import { UserRepository } from '../repository/UserRepository';
 import { ValidationError, NotFoundError } from '../utils/errors';
+import { RefreshTokenInput } from '../validation/authSchemas';
 
 export class AuthController {
   private authService: AuthService;
@@ -130,16 +131,11 @@ export class AuthController {
     res.json(users.map(u => u.toSafeJSON()));
   }
 
-  async refreshToken(req: Request, res: Response): Promise<void> {
+  async refreshToken(req: Request<unknown, unknown, RefreshTokenInput>, res: Response): Promise<void> {
     try {
-      const providedToken = req.body?.refreshToken || req.headers['authorization']?.replace('Bearer ', '');
+      const { refreshToken } = req.body;
 
-      if (!providedToken) {
-        res.status(401).json({ error: 'Refresh token required' });
-        return;
-      }
-
-      const decoded = jwt.verify(providedToken, this.refreshSecret) as jwt.JwtPayload;
+      const decoded = jwt.verify(refreshToken, this.refreshSecret) as jwt.JwtPayload;
       const userId = decoded?.id as string | undefined;
 
       if (!userId) {
