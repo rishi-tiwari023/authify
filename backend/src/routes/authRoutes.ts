@@ -3,13 +3,21 @@ import { AuthController } from '../controller/AuthController';
 import { authMiddleware, requireRole } from '../middleware/authMiddleware';
 import { rateLimitMiddleware } from '../middleware/rateLimitMiddleware';
 import { validateBody } from '../middleware/validationMiddleware';
-import { signupSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema } from '../validation/authSchemas';
+import {
+  signupSchema,
+  loginSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  refreshTokenSchema,
+} from '../validation/authSchemas';
 
 const router = Router();
 const authController = new AuthController();
 
 // Apply rate limiting to auth endpoints
-const authRateLimit = rateLimitMiddleware(5, 60000); // 5 requests per minute
+const publicAuthRateLimit = rateLimitMiddleware({ maxRequests: 10, windowMs: 60000 });
+const passwordResetRateLimit = rateLimitMiddleware({ maxRequests: 5, windowMs: 300000 });
+const refreshRateLimit = rateLimitMiddleware({ maxRequests: 30, windowMs: 60000 });
 
 /**
  * @route POST /api/auth/signup
@@ -19,7 +27,7 @@ const authRateLimit = rateLimitMiddleware(5, 60000); // 5 requests per minute
  * @body {string} email - User's email address
  * @body {string} password - User's password (min 8 chars, must contain uppercase, lowercase, and number)
  */
-router.post('/signup', authRateLimit, validateBody(signupSchema), (req, res) => authController.signup(req, res));
+router.post('/signup', publicAuthRateLimit, validateBody(signupSchema), (req, res) => authController.signup(req, res));
 
 /**
  * @route POST /api/auth/login
@@ -28,7 +36,7 @@ router.post('/signup', authRateLimit, validateBody(signupSchema), (req, res) => 
  * @body {string} email - User's email address
  * @body {string} password - User's password
  */
-router.post('/login', authRateLimit, validateBody(loginSchema), (req, res) => authController.login(req, res));
+router.post('/login', publicAuthRateLimit, validateBody(loginSchema), (req, res) => authController.login(req, res));
 
 /**
  * @route POST /api/auth/refresh
@@ -36,7 +44,7 @@ router.post('/login', authRateLimit, validateBody(loginSchema), (req, res) => au
  * @access Public (uses refresh token validation)
  * @body {string} refreshToken - Refresh token
  */
-router.post('/refresh', (req, res) => authController.refreshToken(req, res));
+router.post('/refresh', refreshRateLimit, validateBody(refreshTokenSchema), (req, res) => authController.refreshToken(req, res));
 
 /**
  * @route GET /api/auth/me
@@ -60,7 +68,7 @@ router.get('/users', authMiddleware, requireRole('ADMIN'), (req, res) => authCon
  * @access Public
  * @body {string} email - User's email address
  */
-router.post('/forgot-password', authRateLimit, validateBody(forgotPasswordSchema), (req, res) => authController.forgotPassword(req, res));
+router.post('/forgot-password', passwordResetRateLimit, validateBody(forgotPasswordSchema), (req, res) => authController.forgotPassword(req, res));
 
 /**
  * @route POST /api/auth/reset-password
@@ -69,7 +77,7 @@ router.post('/forgot-password', authRateLimit, validateBody(forgotPasswordSchema
  * @body {string} token - Password reset token
  * @body {string} newPassword - New password (min 8 chars, must contain uppercase, lowercase, and number)
  */
-router.post('/reset-password', authRateLimit, validateBody(resetPasswordSchema), (req, res) => authController.resetPassword(req, res));
+router.post('/reset-password', passwordResetRateLimit, validateBody(resetPasswordSchema), (req, res) => authController.resetPassword(req, res));
 
 export default router;
 
