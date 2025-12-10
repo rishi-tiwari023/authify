@@ -3,7 +3,16 @@ import { z } from 'zod';
 export const updateProfileSchema = z.object({
   name: z.string().trim().min(2, 'Name must be at least 2 characters').max(100, 'Name must be less than 100 characters').optional(),
   email: z.string().trim().toLowerCase().email('Invalid email format').optional(),
-  profileUrl: z.string().url('Invalid URL format').nullable().optional(),
+  profileUrl: z
+    .string()
+    .trim()
+    .url('Invalid URL format')
+    .refine((url) => url.startsWith('http://') || url.startsWith('https://'), {
+      message: 'Profile URL must use http or https',
+    })
+    .max(2048, 'Profile URL must be less than 2048 characters')
+    .nullable()
+    .optional(),
 });
 
 export const changePasswordSchema = z.object({
