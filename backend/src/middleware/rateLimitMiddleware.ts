@@ -7,20 +7,31 @@ interface RateLimitStore {
   };
 }
 
+type KeyGenerator = (req: Request) => string | undefined;
+
+interface RateLimitOptions {
+  maxRequests?: number;
+  windowMs?: number;
+  keyGenerator?: KeyGenerator;
+}
+
 const store: RateLimitStore = {};
 
 /**
- * Simple in-memory rate limiting middleware
- * @param maxRequests Maximum number of requests allowed
- * @param windowMs Time window in milliseconds
+ * Simple in-memory rate limiting middleware with configurable keying
  */
-export function rateLimitMiddleware(maxRequests: number = 5, windowMs: number = 60000) {
+export function rateLimitMiddleware({
+  maxRequests = 5,
+  windowMs = 60000,
+  keyGenerator,
+}: RateLimitOptions = {}) {
   return (req: Request, res: Response, next: NextFunction): void => {
-    const key = req.ip || 'unknown';
+    // Prefer authenticated/user-aware key when provided, otherwise fall back to IP
+    const key = (keyGenerator ? keyGenerator(req) : req.ip) || 'unknown';
     const now = Date.now();
-    
+
     const record = store[key];
-    
+
     if (!record || now > record.resetTime) {
       store[key] = {
         count: 1,
@@ -29,7 +40,7 @@ export function rateLimitMiddleware(maxRequests: number = 5, windowMs: number = 
       next();
       return;
     }
-    
+
     if (record.count >= maxRequests) {
       res.status(429).json({
         error: 'Too many requests',
@@ -37,7 +48,7 @@ export function rateLimitMiddleware(maxRequests: number = 5, windowMs: number = 
       });
       return;
     }
-    
+
     record.count++;
     next();
   };
