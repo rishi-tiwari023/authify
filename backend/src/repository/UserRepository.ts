@@ -9,6 +9,31 @@ export class UserRepository {
     this.repository = AppDataSource.getRepository(User);
   }
 
+  async findPaginated(params: {
+    page: number;
+    limit: number;
+    search?: string;
+    role?: User['role'];
+  }): Promise<{ data: User[]; total: number }> {
+    const { page, limit, search, role } = params;
+    const qb = this.repository.createQueryBuilder('user');
+
+    if (search) {
+      qb.andWhere('(user.email ILIKE :search OR user.name ILIKE :search)', { search: `%${search}%` });
+    }
+
+    if (role) {
+      qb.andWhere('user.role = :role', { role });
+    }
+
+    qb.orderBy('user.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit);
+
+    const [data, total] = await qb.getManyAndCount();
+    return { data, total };
+  }
+
   async findAll(): Promise<User[]> {
     return await this.repository.find();
   }

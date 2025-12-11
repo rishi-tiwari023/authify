@@ -16,6 +16,8 @@ export interface ChangePasswordData {
   newPassword: string;
 }
 
+import { UserRole } from '../model/User';
+
 export interface UpdateUserRoleData {
   role: UserRole;
 }
@@ -124,6 +126,24 @@ export class UserService {
     }
 
     return updated.toSafeJSON();
+  }
+
+  async listUsers(params: {
+    page: number;
+    limit: number;
+    search?: string;
+    role?: UserRole;
+  }): Promise<{ data: SafeUser[]; total: number; page: number; limit: number; totalPages: number }> {
+    const { data, total } = await this.userRepository.findPaginated(params);
+    const totalPages = Math.ceil(total / params.limit) || 1;
+
+    return {
+      data: data.map((u) => u.toSafeJSON()),
+      total,
+      page: params.page,
+      limit: params.limit,
+      totalPages,
+    };
   }
 }
 

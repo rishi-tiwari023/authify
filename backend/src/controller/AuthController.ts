@@ -130,9 +130,18 @@ export class AuthController {
     res.json(user.toSafeJSON());
   }
 
-  async listUsers(_req: Request, res: Response): Promise<void> {
-    const users = await this.userRepository.findAll();
-    res.json(users.map(u => u.toSafeJSON()));
+  async listUsers(req: Request, res: Response): Promise<void> {
+    try {
+      const page = Math.max(parseInt(req.query.page as string, 10) || 1, 1);
+      const limit = Math.min(Math.max(parseInt(req.query.limit as string, 10) || 20, 1), 100);
+      const search = (req.query.search as string | undefined)?.trim() || undefined;
+      const role = (req.query.role as UserRole | undefined) || undefined;
+
+      const result = await this.userService.listUsers({ page, limit, search, role });
+      res.json(result);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to fetch users' });
+    }
   }
 
   async updateUserRole(req: AuthRequest, res: Response): Promise<void> {
