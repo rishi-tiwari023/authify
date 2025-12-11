@@ -160,6 +160,35 @@ export class AuthController {
     }
   }
 
+  async deleteUser(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: 'Authentication required' });
+        return;
+      }
+
+      if (req.user.role !== UserRole.ADMIN) {
+        throw new ForbiddenError('Admin role required');
+      }
+
+      const { userId } = req.params as { userId: string };
+
+      if (userId === req.user.id) {
+        res.status(400).json({ error: 'Admins cannot delete their own account via admin endpoint' });
+        return;
+      }
+
+      await this.userService.deleteUser(userId);
+      res.json({ message: 'User deleted successfully' });
+    } catch (error) {
+      if (error instanceof ValidationError || error instanceof NotFoundError || error instanceof ForbiddenError) {
+        res.status(error.statusCode).json({ error: error.message });
+        return;
+      }
+      res.status(500).json({ error: 'Failed to delete user' });
+    }
+  }
+
   async refreshToken(req: Request<unknown, unknown, RefreshTokenInput>, res: Response): Promise<void> {
     try {
       const { refreshToken } = req.body;
