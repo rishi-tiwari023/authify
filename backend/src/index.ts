@@ -1,4 +1,5 @@
 import express from 'express';
+import path from 'path';
 import { initializeDatabase, AppDataSource } from './config/data-source';
 import authRoutes from './routes/authRoutes';
 import userRoutes from './routes/userRoutes';
@@ -18,6 +19,7 @@ app.use(loggerMiddleware);
 app.use(securityHeadersMiddleware);
 app.use(express.json());
 app.use(sanitizationMiddleware);
+app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads')));
 
 app.get('/health', async (_req, res) => {
   try {
