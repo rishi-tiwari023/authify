@@ -16,6 +16,10 @@ export interface ChangePasswordData {
   newPassword: string;
 }
 
+export interface UpdateUserRoleData {
+  role: UserRole;
+}
+
 export class UserService {
   private userRepository: UserRepository;
   private passwordResetTokenRepository: PasswordResetTokenRepository;
@@ -105,6 +109,21 @@ export class UserService {
     if (!deleted) {
       throw new NotFoundError('User not found');
     }
+  }
+
+  async updateUserRole(userId: string, data: UpdateUserRoleData): Promise<SafeUser> {
+    const user = await this.userRepository.findById(userId);
+    if (!user) {
+      throw new NotFoundError('User not found');
+    }
+
+    user.role = data.role;
+    const updated = await this.userRepository.update(userId, { role: data.role });
+    if (!updated) {
+      throw new NotFoundError('User not found');
+    }
+
+    return updated.toSafeJSON();
   }
 }
 

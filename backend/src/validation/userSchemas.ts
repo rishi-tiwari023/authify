@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { UserRole } from '../model/User';
 
 export const updateProfileSchema = z.object({
   name: z.string().trim().min(2, 'Name must be at least 2 characters').max(100, 'Name must be less than 100 characters').optional(),
@@ -26,6 +27,15 @@ export const changePasswordSchema = z.object({
     .regex(/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/, 'Password must contain at least one special character'),
 });
 
+export const updateUserRoleSchema = z.object({
+  role: z.nativeEnum(UserRole)
+    .refine(
+      (val) => val === UserRole.USER || val === UserRole.ADMIN,
+      { message: 'Role must be USER or ADMIN' }
+    ),
+});
+
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+export type UpdateUserRoleInput = z.infer<typeof updateUserRoleSchema>;
 

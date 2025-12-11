@@ -4,8 +4,10 @@ import jwt from 'jsonwebtoken';
 import type { SignOptions, Secret } from 'jsonwebtoken';
 import { AuthRequest } from '../middleware/authMiddleware';
 import { UserRepository } from '../repository/UserRepository';
-import { ValidationError, NotFoundError } from '../utils/errors';
+import { ValidationError, NotFoundError, ForbiddenError } from '../utils/errors';
 import { RefreshTokenInput } from '../validation/authSchemas';
+import { UserRole } from '../model/User';
+import { UserService } from '../service/UserService';
 
 export class AuthController {
   private authService: AuthService;
@@ -14,6 +16,7 @@ export class AuthController {
   private readonly refreshSecret: Secret;
   private readonly refreshExpiresIn: SignOptions['expiresIn'];
   private userRepository: UserRepository;
+  private userService: UserService;
 
   constructor() {
     this.authService = new AuthService();
@@ -32,6 +35,7 @@ export class AuthController {
     this.refreshSecret = refreshSecret;
     this.refreshExpiresIn = (process.env.REFRESH_TOKEN_EXPIRATION || '7d') as SignOptions['expiresIn'];
     this.userRepository = new UserRepository();
+    this.userService = new UserService();
   }
 
   private signToken(user: { id: string; email: string; role: string }) {
@@ -129,6 +133,31 @@ export class AuthController {
   async listUsers(_req: Request, res: Response): Promise<void> {
     const users = await this.userRepository.findAll();
     res.json(users.map(u => u.toSafeJSON()));
+  }
+
+  async updateUserRole(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: 'Authentication required' });
+        return;
+      }
+
+      if (req.user.role !== UserRole.ADMIN) {
+        throw new ForbiddenError('Admin role required');
+      }
+
+      const { userId } = req.params as { userId: string };
+      const { role } = req.body as { role: UserRole };
+
+      const updated = await this.userService.updateUserRole(userId, { role });
+      res.json(updated);
+    } catch (error) {
+      if (error instanceof ValidationError || error instanceof NotFoundError || error instanceof ForbiddenError) {
+        res.status(error.statusCode).json({ error: error.message });
+        return;
+      }
+      res.status(500).json({ error: 'Failed to update user role' });
+    }
   }
 
   async refreshToken(req: Request<unknown, unknown, RefreshTokenInput>, res: Response): Promise<void> {

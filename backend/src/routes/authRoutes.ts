@@ -10,6 +10,7 @@ import {
   resetPasswordSchema,
   refreshTokenSchema,
 } from '../validation/authSchemas';
+import { updateUserRoleSchema } from '../validation/userSchemas';
 
 const router = Router();
 const authController = new AuthController();
@@ -61,6 +62,21 @@ router.get('/me', authMiddleware, (req, res) => authController.me(req as any, re
  * @header Authorization: Bearer <token>
  */
 router.get('/users', authMiddleware, requireRole('ADMIN'), (req, res) => authController.listUsers(req, res));
+
+/**
+ * @route PATCH /api/auth/users/:userId/role
+ * @desc Update a user's role (Admin only)
+ * @access Private (Admin)
+ * @header Authorization: Bearer <token>
+ * @body {string} role - New role value (USER or ADMIN)
+ */
+router.patch(
+  '/users/:userId/role',
+  authMiddleware,
+  requireRole('ADMIN'),
+  validateBody(updateUserRoleSchema),
+  (req, res) => authController.updateUserRole(req as any, res)
+);
 
 /**
  * @route POST /api/auth/forgot-password
