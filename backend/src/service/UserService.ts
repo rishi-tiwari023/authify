@@ -128,6 +128,20 @@ export class UserService {
     return updated.toSafeJSON();
   }
 
+  async updateProfilePicture(userId: string, profileUrl: string): Promise<SafeUser> {
+    const user = await this.userRepository.findById(userId);
+    if (!user) {
+      throw new NotFoundError('User not found');
+    }
+
+    const updated = await this.userRepository.update(userId, { profileUrl });
+    if (!updated) {
+      throw new NotFoundError('User not found');
+    }
+
+    return updated.toSafeJSON();
+  }
+
   async listUsers(params: {
     page: number;
     limit: number;
