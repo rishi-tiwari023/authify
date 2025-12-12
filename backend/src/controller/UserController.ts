@@ -5,12 +5,34 @@ import { AuthRequest } from '../middleware/authMiddleware';
 import { ValidationError } from '../utils/errors';
 import { isValidPassword } from '../utils/validation';
 import path from 'path';
+import { ActivityLogService } from '../service/ActivityLogService';
 
 export class UserController {
   private userService: UserService;
+  private activityLogService: ActivityLogService;
 
   constructor() {
     this.userService = new UserService();
+    this.activityLogService = new ActivityLogService();
+  }
+
+  private async logActivity(
+    userId: string,
+    action: string,
+    req: AuthRequest,
+    metadata?: Record<string, unknown>
+  ): Promise<void> {
+    try {
+      await this.activityLogService.log({
+        userId,
+        action,
+        metadata,
+        ipAddress: req.ip,
+        userAgent: (req.headers['user-agent'] as string | undefined) || undefined,
+      });
+    } catch (error) {
+      console.error('Failed to log activity', error);
+    }
   }
 
   async getProfile(req: AuthRequest, res: Response): Promise<void> {
@@ -45,6 +67,7 @@ export class UserController {
         profileUrl,
       });
 
+      this.logActivity(req.user.id, 'update_profile', req, { name, email, profileUrl });
       res.json(updatedUser);
     } catch (error) {
       if (error instanceof ValidationError) {
@@ -81,6 +104,7 @@ export class UserController {
         newPassword,
       });
 
+      this.logActivity(req.user.id, 'change_password', req);
       res.json({ message: 'Password changed successfully' });
     } catch (error) {
       if (error instanceof ValidationError) {
@@ -99,6 +123,7 @@ export class UserController {
       }
 
       await this.userService.deleteUser(req.user.id);
+      this.logActivity(req.user.id, 'delete_account', req);
       res.json({ message: 'Account deleted successfully' });
     } catch (error) {
       res.status(500).json({ error: 'Failed to delete account' });
@@ -122,6 +147,7 @@ export class UserController {
       const filename = path.basename(file.path);
       const publicPath = `/uploads/profile-pictures/${filename}`;
       const updated = await this.userService.updateProfilePicture(req.user.id, publicPath);
+      this.logActivity(req.user.id, 'upload_profile_picture', req, { path: publicPath });
       res.json(updated);
     } catch (error) {
       if (error instanceof ValidationError) {
