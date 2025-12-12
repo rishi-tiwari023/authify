@@ -8,6 +8,7 @@ import { ValidationError, NotFoundError, ForbiddenError } from '../utils/errors'
 import { RefreshTokenInput } from '../validation/authSchemas';
 import { UserRole } from '../model/User';
 import { UserService } from '../service/UserService';
+import { ActivityLogService } from '../service/ActivityLogService';
 
 export class AuthController {
   private authService: AuthService;
@@ -17,6 +18,7 @@ export class AuthController {
   private readonly refreshExpiresIn: SignOptions['expiresIn'];
   private userRepository: UserRepository;
   private userService: UserService;
+  private activityLogService: ActivityLogService;
 
   constructor() {
     this.authService = new AuthService();
@@ -36,6 +38,7 @@ export class AuthController {
     this.refreshExpiresIn = (process.env.REFRESH_TOKEN_EXPIRATION || '7d') as SignOptions['expiresIn'];
     this.userRepository = new UserRepository();
     this.userService = new UserService();
+    this.activityLogService = new ActivityLogService();
   }
 
   private signToken(user: { id: string; email: string; role: string }) {
@@ -58,6 +61,25 @@ export class AuthController {
     );
   }
 
+  private async logActivity(
+    userId: string,
+    action: string,
+    req?: Request,
+    metadata?: Record<string, unknown>
+  ): Promise<void> {
+    try {
+      await this.activityLogService.log({
+        userId,
+        action,
+        metadata,
+        ipAddress: req?.ip,
+        userAgent: (req?.headers['user-agent'] as string | undefined) || undefined,
+      });
+    } catch (error) {
+      console.error('Failed to log activity', error);
+    }
+  }
+
   async signup(req: Request, res: Response): Promise<void> {
     try {
       const { name, email, password } = req.body;
@@ -70,6 +92,8 @@ export class AuthController {
       const user = await this.authService.signup({ name, email, password });
       const token = this.signToken({ id: user.id, email: user.email, role: user.role });
       const refreshToken = this.signRefreshToken({ id: user.id, email: user.email, role: user.role });
+
+      this.logActivity(user.id, 'signup', req);
 
       res.status(201).json({
         user: user.toSafeJSON(),
@@ -102,6 +126,8 @@ export class AuthController {
 
       const token = this.signToken({ id: user.id, email: user.email, role: user.role });
       const refreshToken = this.signRefreshToken({ id: user.id, email: user.email, role: user.role });
+
+      this.logActivity(user.id, 'login', req);
 
       res.json({
         user: user.toSafeJSON(),
@@ -159,6 +185,7 @@ export class AuthController {
       const { role } = req.body as { role: UserRole };
 
       const updated = await this.userService.updateUserRole(userId, { role });
+      this.logActivity(req.user.id, 'update_user_role', req, { targetUserId: userId, role });
       res.json(updated);
     } catch (error) {
       if (error instanceof ValidationError || error instanceof NotFoundError || error instanceof ForbiddenError) {
@@ -188,6 +215,7 @@ export class AuthController {
       }
 
       await this.userService.deleteUser(userId);
+      this.logActivity(req.user.id, 'delete_user', req, { targetUserId: userId });
       res.json({ message: 'User deleted successfully' });
     } catch (error) {
       if (error instanceof ValidationError || error instanceof NotFoundError || error instanceof ForbiddenError) {
