@@ -5,6 +5,8 @@ import { ValidationError, NotFoundError } from '../utils/errors';
 import { isValidEmail, isValidPassword, validateName } from '../utils/validation';
 import { PasswordResetTokenRepository } from '../repository/PasswordResetTokenRepository';
 import { PasswordResetToken } from '../model/PasswordResetToken';
+import { EmailVerificationTokenRepository } from '../repository/EmailVerificationTokenRepository';
+import { EmailVerificationToken } from '../model/EmailVerificationToken';
 import { EmailService } from './EmailService';
 import * as crypto from 'crypto';
 
@@ -22,12 +24,14 @@ export interface LoginData {
 export class AuthService {
   private userRepository: UserRepository;
   private passwordResetTokenRepository: PasswordResetTokenRepository;
+  private emailVerificationTokenRepository: EmailVerificationTokenRepository;
   private emailService: EmailService;
   private readonly saltRounds = 10;
 
   constructor() {
     this.userRepository = new UserRepository();
     this.passwordResetTokenRepository = new PasswordResetTokenRepository();
+    this.emailVerificationTokenRepository = new EmailVerificationTokenRepository();
     this.emailService = new EmailService();
   }
 
@@ -68,7 +72,60 @@ export class AuthService {
       .sendWelcomeEmail(user.email, user.name)
       .catch((error) => console.error('Failed to send welcome email:', error));
 
+    // Send email verification (non-blocking)
+    this.sendVerificationEmail(user.id, user.email, user.name).catch((error) =>
+      console.error('Failed to send verification email:', error)
+    );
+
     return user;
+  }
+
+  async sendVerificationEmail(userId: string, email: string, name: string): Promise<EmailVerificationToken> {
+    // Delete any existing verification tokens for this user
+    await this.emailVerificationTokenRepository.deleteByUserId(userId);
+
+    // Generate secure random token
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 24); // Token expires in 24 hours
+
+    const verificationToken = await this.emailVerificationTokenRepository.create({
+      token,
+      userId,
+      expiresAt,
+      used: false,
+    });
+
+    // Send verification email
+    try {
+      await this.emailService.sendVerificationEmail(email, name, token);
+    } catch (error) {
+      // Log error but don't fail the request (token is still created)
+      console.error('Failed to send verification email:', error);
+    }
+
+    return verificationToken;
+  }
+
+  async verifyEmail(token: string): Promise<void> {
+    const verificationToken = await this.emailVerificationTokenRepository.findByToken(token);
+    if (!verificationToken) {
+      throw new ValidationError('Invalid or expired verification token');
+    }
+
+    if (verificationToken.used) {
+      throw new ValidationError('Verification token has already been used');
+    }
+
+    if (verificationToken.expiresAt < new Date()) {
+      throw new ValidationError('Verification token has expired');
+    }
+
+    // Mark email as verified
+    await this.userRepository.update(verificationToken.userId, { emailVerified: true });
+
+    // Mark token as used
+    await this.emailVerificationTokenRepository.markAsUsed(verificationToken.id);
   }
 
   async login(data: LoginData): Promise<User | null> {
