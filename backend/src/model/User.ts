@@ -11,6 +11,7 @@ export interface SafeUser {
   email: string;
   role: UserRole;
   profileUrl: string | null;
+  emailVerified: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -34,6 +35,9 @@ export class User {
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   profileUrl!: string | null;
+
+  @Column({ type: 'boolean', default: false })
+  emailVerified!: boolean;
 
   @CreateDateColumn({ type: 'timestamp with time zone' })
   createdAt!: Date;
@@ -73,6 +77,7 @@ export class User {
       email: this.email,
       role: this.role,
       profileUrl: this.profileUrl,
+      emailVerified: this.emailVerified,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
     };
