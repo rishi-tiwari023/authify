@@ -167,6 +167,69 @@ If you did not request this password reset, please ignore this email.
   }
 
   /**
+   * Send email verification email
+   * @param email - Recipient email
+   * @param name - User's name
+   * @param verificationToken - Email verification token
+   */
+  async sendVerificationEmail(email: string, name: string, verificationToken: string): Promise<void> {
+    const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${verificationToken}`;
+    
+    const subject = 'Verify Your Email Address';
+    const html = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta charset="utf-8">
+          <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .button { display: inline-block; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px; margin: 20px 0; }
+            .button:hover { background-color: #0056b3; }
+            .footer { margin-top: 30px; font-size: 12px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <h1>Verify Your Email Address</h1>
+            <p>Hello ${name},</p>
+            <p>Thank you for signing up! Please verify your email address by clicking the button below:</p>
+            <a href="${verificationUrl}" class="button">Verify Email</a>
+            <p>Or copy and paste this link into your browser:</p>
+            <p style="word-break: break-all;">${verificationUrl}</p>
+            <p>This link will expire in 24 hours.</p>
+            <p>If you did not create an account, please ignore this email.</p>
+            <div class="footer">
+              <p>This is an automated message, please do not reply.</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+    
+    const text = `
+Verify Your Email Address
+
+Hello ${name},
+
+Thank you for signing up! Please verify your email address by visiting the following link:
+
+${verificationUrl}
+
+This link will expire in 24 hours.
+
+If you did not create an account, please ignore this email.
+    `;
+
+    await this.sendEmail({
+      to: email,
+      subject,
+      html,
+      text,
+    });
+  }
+
+  /**
    * Check if email sending is fully configured.
    */
   isEmailEnabled(): boolean {
