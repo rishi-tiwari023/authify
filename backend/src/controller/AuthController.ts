@@ -303,5 +303,54 @@ export class AuthController {
       res.status(500).json({ error: 'Failed to reset password' });
     }
   }
+
+  async verifyEmail(req: Request, res: Response): Promise<void> {
+    try {
+      const { token } = req.body;
+
+      if (!token) {
+        res.status(400).json({ error: 'Verification token is required' });
+        return;
+      }
+
+      await this.authService.verifyEmail(token);
+      res.json({ message: 'Email verified successfully' });
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        res.status(error.statusCode).json({ error: error.message });
+        return;
+      }
+      res.status(500).json({ error: 'Failed to verify email' });
+    }
+  }
+
+  async resendVerificationEmail(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: 'Authentication required' });
+        return;
+      }
+
+      const user = await this.userRepository.findById(req.user.id);
+      if (!user) {
+        res.status(404).json({ error: 'User not found' });
+        return;
+      }
+
+      if (user.emailVerified) {
+        res.status(400).json({ error: 'Email is already verified' });
+        return;
+      }
+
+      await this.authService.sendVerificationEmail(user.id, user.email, user.name);
+      res.json({ message: 'Verification email sent successfully' });
+    } catch (error) {
+      if (error instanceof ValidationError) {
+        res.status(error.statusCode).json({ error: error.message });
+        return;
+      }
+      res.status(500).json({ error: 'Failed to send verification email' });
+    }
+  }
 }
 
