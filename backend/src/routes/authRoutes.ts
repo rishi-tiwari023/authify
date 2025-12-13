@@ -9,6 +9,7 @@ import {
   forgotPasswordSchema,
   resetPasswordSchema,
   refreshTokenSchema,
+  verifyEmailSchema,
 } from '../validation/authSchemas';
 import { updateUserRoleSchema } from '../validation/userSchemas';
 
@@ -94,6 +95,22 @@ router.post('/forgot-password', passwordResetRateLimit, validateBody(forgotPassw
  * @body {string} newPassword - New password (min 8 chars, must contain uppercase, lowercase, and number)
  */
 router.post('/reset-password', passwordResetRateLimit, validateBody(resetPasswordSchema), (req, res) => authController.resetPassword(req, res));
+
+/**
+ * @route POST /api/auth/verify-email
+ * @desc Verify email address using token
+ * @access Public
+ * @body {string} token - Email verification token
+ */
+router.post('/verify-email', publicAuthRateLimit, validateBody(verifyEmailSchema), (req, res) => authController.verifyEmail(req, res));
+
+/**
+ * @route POST /api/auth/resend-verification
+ * @desc Resend email verification email
+ * @access Private
+ * @header Authorization: Bearer <token>
+ */
+router.post('/resend-verification', authMiddleware, (req, res) => authController.resendVerificationEmail(req as any, res));
 
 export default router;
 
