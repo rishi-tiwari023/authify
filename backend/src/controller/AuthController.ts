@@ -9,6 +9,8 @@ import { RefreshTokenInput } from '../validation/authSchemas';
 import { UserRole } from '../model/User';
 import { UserService } from '../service/UserService';
 import { ActivityLogService } from '../service/ActivityLogService';
+import { safeLogActivity } from '../utils/activityLogger';
+import { handleControllerError } from '../utils/controller';
 
 export class AuthController {
   private authService: AuthService;
@@ -61,25 +63,6 @@ export class AuthController {
     );
   }
 
-  private async logActivity(
-    userId: string,
-    action: string,
-    req?: Request,
-    metadata?: Record<string, unknown>
-  ): Promise<void> {
-    try {
-      await this.activityLogService.log({
-        userId,
-        action,
-        metadata,
-        ipAddress: req?.ip,
-        userAgent: (req?.headers['user-agent'] as string | undefined) || undefined,
-      });
-    } catch (error) {
-      console.error('Failed to log activity', error);
-    }
-  }
-
   async signup(req: Request, res: Response): Promise<void> {
     try {
       const { name, email, password } = req.body;
@@ -93,7 +76,7 @@ export class AuthController {
       const token = this.signToken({ id: user.id, email: user.email, role: user.role });
       const refreshToken = this.signRefreshToken({ id: user.id, email: user.email, role: user.role });
 
-      this.logActivity(user.id, 'signup', req);
+      safeLogActivity(this.activityLogService, { userId: user.id, action: 'signup', req });
 
       res.status(201).json({
         user: user.toSafeJSON(),
@@ -105,7 +88,7 @@ export class AuthController {
         res.status(error.statusCode).json({ error: error.message });
         return;
       }
-      res.status(400).json({ error: (error as Error).message });
+      handleControllerError(res, error, 400, (error as Error).message);
     }
   }
 
@@ -127,7 +110,7 @@ export class AuthController {
       const token = this.signToken({ id: user.id, email: user.email, role: user.role });
       const refreshToken = this.signRefreshToken({ id: user.id, email: user.email, role: user.role });
 
-      this.logActivity(user.id, 'login', req);
+      safeLogActivity(this.activityLogService, { userId: user.id, action: 'login', req });
 
       res.json({
         user: user.toSafeJSON(),
@@ -139,7 +122,7 @@ export class AuthController {
         res.status(error.statusCode).json({ error: error.message });
         return;
       }
-      res.status(500).json({ error: 'Login failed' });
+      handleControllerError(res, error, 500, 'Login failed');
     }
   }
 
@@ -166,7 +149,7 @@ export class AuthController {
       const result = await this.userService.listUsers({ page, limit, search, role });
       res.json(result);
     } catch (error) {
-      res.status(500).json({ error: 'Failed to fetch users' });
+      handleControllerError(res, error, 500, 'Failed to fetch users');
     }
   }
 
@@ -185,14 +168,19 @@ export class AuthController {
       const { role } = req.body as { role: UserRole };
 
       const updated = await this.userService.updateUserRole(userId, { role });
-      this.logActivity(req.user.id, 'update_user_role', req, { targetUserId: userId, role });
+      safeLogActivity(this.activityLogService, {
+        userId: req.user.id,
+        action: 'update_user_role',
+        req,
+        metadata: { targetUserId: userId, role },
+      });
       res.json(updated);
     } catch (error) {
       if (error instanceof ValidationError || error instanceof NotFoundError || error instanceof ForbiddenError) {
         res.status(error.statusCode).json({ error: error.message });
         return;
       }
-      res.status(500).json({ error: 'Failed to update user role' });
+      handleControllerError(res, error, 500, 'Failed to update user role');
     }
   }
 
@@ -215,14 +203,19 @@ export class AuthController {
       }
 
       await this.userService.deleteUser(userId);
-      this.logActivity(req.user.id, 'delete_user', req, { targetUserId: userId });
+      safeLogActivity(this.activityLogService, {
+        userId: req.user.id,
+        action: 'delete_user',
+        req,
+        metadata: { targetUserId: userId },
+      });
       res.json({ message: 'User deleted successfully' });
     } catch (error) {
       if (error instanceof ValidationError || error instanceof NotFoundError || error instanceof ForbiddenError) {
         res.status(error.statusCode).json({ error: error.message });
         return;
       }
-      res.status(500).json({ error: 'Failed to delete user' });
+      handleControllerError(res, error, 500, 'Failed to delete user');
     }
   }
 
@@ -253,7 +246,7 @@ export class AuthController {
         user: user.toSafeJSON(),
       });
     } catch (error) {
-      res.status(500).json({ error: 'Failed to refresh token' });
+      handleControllerError(res, error, 500, 'Failed to refresh token');
     }
   }
 
@@ -280,7 +273,7 @@ export class AuthController {
         });
         return;
       }
-      res.status(500).json({ error: 'Failed to process password reset request' });
+      handleControllerError(res, error, 500, 'Failed to process password reset request');
     }
   }
 
@@ -300,7 +293,7 @@ export class AuthController {
         res.status(error.statusCode).json({ error: error.message });
         return;
       }
-      res.status(500).json({ error: 'Failed to reset password' });
+      handleControllerError(res, error, 500, 'Failed to reset password');
     }
   }
 
@@ -320,7 +313,7 @@ export class AuthController {
         res.status(error.statusCode).json({ error: error.message });
         return;
       }
-      res.status(500).json({ error: 'Failed to verify email' });
+      handleControllerError(res, error, 500, 'Failed to verify email');
     }
   }
 
@@ -349,7 +342,7 @@ export class AuthController {
         res.status(error.statusCode).json({ error: error.message });
         return;
       }
-      res.status(500).json({ error: 'Failed to send verification email' });
+      handleControllerError(res, error, 500, 'Failed to send verification email');
     }
   }
 }
