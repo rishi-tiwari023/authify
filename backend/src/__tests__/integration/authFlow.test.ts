@@ -1,10 +1,29 @@
-import { UserRole } from '../../model/User';
+import type { Response } from 'express';
+import { SafeUser, UserRole } from '../../model/User';
 import { AuthController } from '../../controller/AuthController';
 
+type StoredUser = SafeUser & { password: string; toSafeJSON(): SafeUser };
+type TokenRecord = {
+  id: string;
+  token: string;
+  userId: string;
+  expiresAt: Date;
+  used: boolean;
+  createdAt: Date;
+};
+
 // In-memory stores to simulate persistence across service calls
-const users: any[] = [];
-const resetTokens: any[] = [];
-const verificationTokens: any[] = [];
+const users: StoredUser[] = [];
+const resetTokens: TokenRecord[] = [];
+const verificationTokens: TokenRecord[] = [];
+
+const pruneByUserId = (store: TokenRecord[], userId: string) => {
+  for (let i = store.length - 1; i >= 0; i -= 1) {
+    if (store[i].userId === userId) {
+      store.splice(i, 1);
+    }
+  }
+};
 
 const emailServiceMock = {
   sendWelcomeEmail: jest.fn().mockResolvedValue(undefined),
@@ -24,18 +43,27 @@ jest.mock('../../repository/UserRepository', () => {
       async findById(id: string) {
         return users.find((u) => u.id === id) ?? null;
       },
-      async create(data: any) {
-        const user = {
+      async create(data: {
+        name: string;
+        email: string;
+        password: string;
+        role?: UserRole;
+        emailVerified?: boolean;
+        profileUrl?: string | null;
+        createdAt?: Date;
+        updatedAt?: Date;
+      }) {
+        const user: StoredUser = {
           id: `user-${users.length + 1}`,
           name: data.name,
           email: data.email,
           password: data.password,
           role: data.role ?? UserRole.USER,
           emailVerified: data.emailVerified ?? false,
-          profileUrl: null,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          toSafeJSON() {
+          profileUrl: data.profileUrl ?? null,
+          createdAt: data.createdAt ?? new Date(),
+          updatedAt: data.updatedAt ?? new Date(),
+          toSafeJSON(): SafeUser {
             return {
               id: this.id,
               name: this.name,
@@ -51,7 +79,7 @@ jest.mock('../../repository/UserRepository', () => {
         users.push(user);
         return user;
       },
-      async update(id: string, data: any) {
+      async update(id: string, data: Partial<StoredUser>) {
         const existing = users.find((u) => u.id === id);
         if (!existing) return null;
         Object.assign(existing, data, { updatedAt: new Date() });
@@ -64,8 +92,8 @@ jest.mock('../../repository/UserRepository', () => {
 jest.mock('../../repository/PasswordResetTokenRepository', () => {
   return {
     PasswordResetTokenRepository: jest.fn().mockImplementation(() => ({
-      async create(data: any) {
-        const token = {
+      async create(data: Omit<TokenRecord, 'id' | 'used' | 'createdAt'>) {
+        const token: TokenRecord = {
           id: `reset-${resetTokens.length + 1}`,
           used: false,
           createdAt: new Date(),
@@ -84,11 +112,7 @@ jest.mock('../../repository/PasswordResetTokenRepository', () => {
         }
       },
       async deleteByUserId(userId: string) {
-        for (let i = resetTokens.length - 1; i >= 0; i -= 1) {
-          if (resetTokens[i].userId === userId) {
-            resetTokens.splice(i, 1);
-          }
-        }
+        pruneByUserId(resetTokens, userId);
       },
       async deleteExpiredTokens() {
         return;
@@ -101,14 +125,10 @@ jest.mock('../../repository/EmailVerificationTokenRepository', () => {
   return {
     EmailVerificationTokenRepository: jest.fn().mockImplementation(() => ({
       async deleteByUserId(userId: string) {
-        for (let i = verificationTokens.length - 1; i >= 0; i -= 1) {
-          if (verificationTokens[i].userId === userId) {
-            verificationTokens.splice(i, 1);
-          }
-        }
+        pruneByUserId(verificationTokens, userId);
       },
-      async create(data: any) {
-        const token = {
+      async create(data: Omit<TokenRecord, 'id' | 'used' | 'createdAt'>) {
+        const token: TokenRecord = {
           id: `verify-${verificationTokens.length + 1}`,
           used: false,
           createdAt: new Date(),
@@ -155,10 +175,32 @@ jest.mock('crypto', () => ({
   randomBytes: (len: number) => Buffer.from(`token-${len}`),
 }));
 
-const createMockResponse = () => {
+interface MockResponse {
+  json: jest.Mock;
+  status: jest.Mock;
+}
+
+const createMockResponse = (): MockResponse => {
   const json = jest.fn();
   const status = jest.fn().mockReturnValue({ json });
-  return { json, status } as any;
+  return { json, status };
+};
+
+const asExpressResponse = (res: MockResponse): Response => res as unknown as Response;
+
+type SignupBody = { name: string; email: string; password: string };
+
+const signupUser = async (controller: AuthController, body: SignupBody) => {
+  const response = createMockResponse();
+  await controller.signup(
+    {
+      body,
+      headers: {},
+      ip: '127.0.0.1',
+    } as any,
+    asExpressResponse(response)
+  );
+  return response;
 };
 
 describe('Integration: Auth and Password Reset flows', () => {
@@ -173,16 +215,11 @@ describe('Integration: Auth and Password Reset flows', () => {
 
   it('completes signup then login returning tokens and persisted user state', async () => {
     const controller = new AuthController();
-    const signupRes = createMockResponse();
-
-    await controller.signup(
-      {
-        body: { name: 'Jane Doe', email: 'jane@example.com', password: 'Password1!' },
-        headers: {},
-        ip: '127.0.0.1',
-      } as any,
-      signupRes
-    );
+    const signupRes = await signupUser(controller, {
+      name: 'Jane Doe',
+      email: 'jane@example.com',
+      password: 'Password1!',
+    });
 
     expect(signupRes.status).toHaveBeenCalledWith(201);
     const signupPayload = signupRes.json.mock.calls[0][0];
@@ -195,7 +232,7 @@ describe('Integration: Auth and Password Reset flows', () => {
     const loginRes = createMockResponse();
     await controller.login(
       { body: { email: 'jane@example.com', password: 'Password1!' }, headers: {}, ip: '127.0.0.1' } as any,
-      loginRes
+      asExpressResponse(loginRes)
     );
 
     const loginPayload = loginRes.json.mock.calls[0][0];
@@ -208,17 +245,14 @@ describe('Integration: Auth and Password Reset flows', () => {
     const controller = new AuthController();
 
     // Seed user through signup
-    await controller.signup(
-      {
-        body: { name: 'John Doe', email: 'john@example.com', password: 'Password1!' },
-        headers: {},
-        ip: '127.0.0.1',
-      } as any,
-      createMockResponse()
-    );
+    await signupUser(controller, {
+      name: 'John Doe',
+      email: 'john@example.com',
+      password: 'Password1!',
+    });
 
     const forgotRes = createMockResponse();
-    await controller.forgotPassword({ body: { email: 'john@example.com' } } as any, forgotRes);
+    await controller.forgotPassword({ body: { email: 'john@example.com' } } as any, asExpressResponse(forgotRes));
 
     expect(forgotRes.json).toHaveBeenCalledWith({
       message: 'If the email exists, a password reset link has been sent',
@@ -229,7 +263,7 @@ describe('Integration: Auth and Password Reset flows', () => {
     const resetRes = createMockResponse();
     await controller.resetPassword(
       { body: { token: resetToken, newPassword: 'NewPassword1!' } } as any,
-      resetRes
+      asExpressResponse(resetRes)
     );
 
     expect(resetRes.json).toHaveBeenCalledWith({ message: 'Password reset successfully' });
@@ -238,7 +272,7 @@ describe('Integration: Auth and Password Reset flows', () => {
     const loginRes = createMockResponse();
     await controller.login(
       { body: { email: 'john@example.com', password: 'NewPassword1!' }, headers: {}, ip: '127.0.0.1' } as any,
-      loginRes
+      asExpressResponse(loginRes)
     );
 
     expect(loginRes.json).toHaveBeenCalled();
