@@ -6,6 +6,8 @@ import { ValidationError } from '../utils/errors';
 import { isValidPassword } from '../utils/validation';
 import path from 'path';
 import { ActivityLogService } from '../service/ActivityLogService';
+import { safeLogActivity } from '../utils/activityLogger';
+import { handleControllerError } from '../utils/controller';
 
 export class UserController {
   private userService: UserService;
@@ -14,25 +16,6 @@ export class UserController {
   constructor() {
     this.userService = new UserService();
     this.activityLogService = new ActivityLogService();
-  }
-
-  private async logActivity(
-    userId: string,
-    action: string,
-    req: AuthRequest,
-    metadata?: Record<string, unknown>
-  ): Promise<void> {
-    try {
-      await this.activityLogService.log({
-        userId,
-        action,
-        metadata,
-        ipAddress: req.ip,
-        userAgent: (req.headers['user-agent'] as string | undefined) || undefined,
-      });
-    } catch (error) {
-      console.error('Failed to log activity', error);
-    }
   }
 
   async getProfile(req: AuthRequest, res: Response): Promise<void> {
@@ -67,14 +50,19 @@ export class UserController {
         profileUrl,
       });
 
-      this.logActivity(req.user.id, 'update_profile', req, { name, email, profileUrl });
+      safeLogActivity(this.activityLogService, {
+        userId: req.user.id,
+        action: 'update_profile',
+        req,
+        metadata: { name, email, profileUrl },
+      });
       res.json(updatedUser);
     } catch (error) {
       if (error instanceof ValidationError) {
         res.status(error.statusCode).json({ error: error.message });
         return;
       }
-      res.status(500).json({ error: 'Failed to update profile' });
+      handleControllerError(res, error, 500, 'Failed to update profile');
     }
   }
 
@@ -104,14 +92,14 @@ export class UserController {
         newPassword,
       });
 
-      this.logActivity(req.user.id, 'change_password', req);
+      safeLogActivity(this.activityLogService, { userId: req.user.id, action: 'change_password', req });
       res.json({ message: 'Password changed successfully' });
     } catch (error) {
       if (error instanceof ValidationError) {
         res.status(error.statusCode).json({ error: error.message });
         return;
       }
-      res.status(500).json({ error: 'Failed to change password' });
+      handleControllerError(res, error, 500, 'Failed to change password');
     }
   }
 
@@ -123,10 +111,10 @@ export class UserController {
       }
 
       await this.userService.deleteUser(req.user.id);
-      this.logActivity(req.user.id, 'delete_account', req);
+      safeLogActivity(this.activityLogService, { userId: req.user.id, action: 'delete_account', req });
       res.json({ message: 'Account deleted successfully' });
     } catch (error) {
-      res.status(500).json({ error: 'Failed to delete account' });
+      handleControllerError(res, error, 500, 'Failed to delete account');
     }
   }
 
@@ -147,14 +135,19 @@ export class UserController {
       const filename = path.basename(file.path);
       const publicPath = `/uploads/profile-pictures/${filename}`;
       const updated = await this.userService.updateProfilePicture(req.user.id, publicPath);
-      this.logActivity(req.user.id, 'upload_profile_picture', req, { path: publicPath });
+      safeLogActivity(this.activityLogService, {
+        userId: req.user.id,
+        action: 'upload_profile_picture',
+        req,
+        metadata: { path: publicPath },
+      });
       res.json(updated);
     } catch (error) {
       if (error instanceof ValidationError) {
         res.status(error.statusCode).json({ error: error.message });
         return;
       }
-      res.status(500).json({ error: 'Failed to upload profile picture' });
+      handleControllerError(res, error, 500, 'Failed to upload profile picture');
     }
   }
 }
