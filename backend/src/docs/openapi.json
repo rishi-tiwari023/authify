@@ -1,0 +1,406 @@
+{
+    "openapi": "3.1.0",
+    "info": {
+        "title": "Authify API",
+        "version": "1.0.0",
+        "description": "Authentication and user management API for Authify.\n\nAll protected endpoints require a bearer access token (JWT) issued by the `/api/auth/login` or `/api/auth/signup` endpoints."
+    },
+    "servers": [
+        {
+            "url": "http://localhost:3000",
+            "description": "Local development"
+        }
+    ],
+    "tags": [
+        {
+            "name": "Auth",
+            "description": "Authentication and authorization endpoints"
+        },
+        {
+            "name": "User",
+            "description": "User profile and account management"
+        },
+        {
+            "name": "Health",
+            "description": "Service health"
+        }
+    ],
+    "components": {
+        "securitySchemes": {
+            "bearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+                "description": "Include the access token as: `Authorization: Bearer <token>`"
+            }
+        },
+        "schemas": {
+            "User": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email"
+                    },
+                    "role": {
+                        "type": "string",
+                        "enum": [
+                            "USER",
+                            "ADMIN"
+                        ]
+                    },
+                    "profileUrl": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "emailVerified": {
+                        "type": "boolean"
+                    },
+                    "createdAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updatedAt": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "email",
+                    "role",
+                    "emailVerified",
+                    "createdAt",
+                    "updatedAt"
+                ]
+            },
+            "AuthTokens": {
+                "type": "object",
+                "properties": {
+                    "token": {
+                        "type": "string",
+                        "description": "Access token (JWT)"
+                    },
+                    "refreshToken": {
+                        "type": "string",
+                        "description": "Refresh token (JWT)"
+                    }
+                },
+                "required": [
+                    "token",
+                    "refreshToken"
+                ]
+            },
+            "ErrorResponse": {
+                "type": "object",
+                "properties": {
+                    "error": {
+                        "type": "string",
+                        "description": "Human-readable error message"
+                    }
+                },
+                "required": [
+                    "error"
+                ]
+            },
+            "SignupRequest": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email"
+                    },
+                    "password": {
+                        "type": "string",
+                        "description": "Minimum 8 characters, with uppercase, lowercase, number, and special character"
+                    }
+                },
+                "required": [
+                    "name",
+                    "email",
+                    "password"
+                ]
+            },
+            "LoginRequest": {
+                "type": "object",
+                "properties": {
+                    "email": {
+                        "type": "string",
+                        "format": "email"
+                    },
+                    "password": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "email",
+                    "password"
+                ]
+            }
+        },
+        "responses": {
+            "UnauthorizedError": {
+                "description": "Missing or invalid authentication token",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/ErrorResponse"
+                        },
+                        "examples": {
+                            "missingToken": {
+                                "value": {
+                                    "error": "Authentication required"
+                                }
+                            },
+                            "invalidToken": {
+                                "value": {
+                                    "error": "Invalid or expired token"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "NotFoundError": {
+                "description": "Requested resource was not found",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "paths": {
+        "/health": {
+            "get": {
+                "tags": [
+                    "Health"
+                ],
+                "summary": "Service health check",
+                "responses": {
+                    "200": {
+                        "description": "Service is healthy",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "status": {
+                                            "type": "string"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "version": {
+                                            "type": "string"
+                                        },
+                                        "environment": {
+                                            "type": "string"
+                                        },
+                                        "nodeVersion": {
+                                            "type": "string"
+                                        },
+                                        "uptimeSeconds": {
+                                            "type": "number"
+                                        },
+                                        "database": {
+                                            "type": "string"
+                                        },
+                                        "timestamp": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "503": {
+                        "description": "Health check failed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "status": {
+                                            "type": "string"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "database": {
+                                            "type": "string"
+                                        },
+                                        "version": {
+                                            "type": "string"
+                                        },
+                                        "timestamp": {
+                                            "type": "string",
+                                            "format": "date-time"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/signup": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Register a new user",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/SignupRequest"
+                            },
+                            "examples": {
+                                "basic": {
+                                    "value": {
+                                        "name": "Jane Doe",
+                                        "email": "jane@example.com",
+                                        "password": "Password1!"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "User created and tokens issued",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "user": {
+                                            "$ref": "#/components/schemas/User"
+                                        },
+                                        "token": {
+                                            "type": "string"
+                                        },
+                                        "refreshToken": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "invalidEmail": {
+                                        "value": {
+                                            "error": "Invalid email format"
+                                        }
+                                    },
+                                    "weakPassword": {
+                                        "value": {
+                                            "error": "Password must be at least 8 characters long"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/auth/login": {
+            "post": {
+                "tags": [
+                    "Auth"
+                ],
+                "summary": "Login with email and password",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/LoginRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Login successful",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "user": {
+                                            "$ref": "#/components/schemas/User"
+                                        },
+                                        "token": {
+                                            "type": "string"
+                                        },
+                                        "refreshToken": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid credentials",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "invalid": {
+                                        "value": {
+                                            "error": "Invalid credentials"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
