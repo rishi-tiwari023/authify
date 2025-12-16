@@ -1,5 +1,6 @@
 import express from 'express';
 import path from 'path';
+import fs from 'fs';
 import { initializeDatabase, AppDataSource } from './config/data-source';
 import authRoutes from './routes/authRoutes';
 import userRoutes from './routes/userRoutes';
@@ -20,6 +21,23 @@ app.use(securityHeadersMiddleware);
 app.use(express.json());
 app.use(sanitizationMiddleware);
 app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads')));
+
+// Serve OpenAPI documentation
+const openApiPath = path.resolve(process.cwd(), 'backend', 'src', 'docs', 'openapi.json');
+let cachedOpenApi: unknown | null = null;
+
+app.get('/api/docs/openapi.json', (_req, res) => {
+  try {
+    if (!cachedOpenApi) {
+      const raw = fs.readFileSync(openApiPath, 'utf-8');
+      cachedOpenApi = JSON.parse(raw);
+    }
+    res.json(cachedOpenApi);
+  } catch (error) {
+    console.error('Failed to load OpenAPI document', error);
+    res.status(500).json({ error: 'Failed to load API documentation' });
+  }
+});
 
 app.get('/health', async (_req, res) => {
   try {
