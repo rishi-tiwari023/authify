@@ -452,8 +452,8 @@
                             "examples": {
                                 "basic": {
                                     "value": {
-                                        "name": "Jane Doe",
-                                        "email": "jane@example.com",
+                                        "name": "Rishi Tiwari",
+                                        "email": "rishi.tiwari@example.com",
                                         "password": "Password1!"
                                     }
                                 }
@@ -485,8 +485,8 @@
                                         "value": {
                                             "user": {
                                                 "id": "a5b8f9b5-1234-4c7a-9b9b-abcdef123456",
-                                                "name": "Jane Doe",
-                                                "email": "jane@example.com",
+                                                "name": "Rishi Tiwari",
+                                                "email": "rishi.tiwari@example.com",
                                                 "role": "USER",
                                                 "profileUrl": null,
                                                 "emailVerified": false,
@@ -542,7 +542,7 @@
                             "examples": {
                                 "basic": {
                                     "value": {
-                                        "email": "jane@example.com",
+                                        "email": "akhil.pandey@example.com",
                                         "password": "Password1!"
                                     }
                                 }
@@ -574,8 +574,8 @@
                                         "value": {
                                             "user": {
                                                 "id": "a5b8f9b5-1234-4c7a-9b9b-abcdef123456",
-                                                "name": "Jane Doe",
-                                                "email": "jane@example.com",
+                                                "name": "Akhil Pandey",
+                                                "email": "akhil.pandey@example.com",
                                                 "role": "USER",
                                                 "profileUrl": null,
                                                 "emailVerified": true,
@@ -669,8 +669,8 @@
                                             "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
                                             "user": {
                                                 "id": "a5b8f9b5-1234-4c7a-9b9b-abcdef123456",
-                                                "name": "Jane Doe",
-                                                "email": "jane@example.com",
+                                                "name": "Aditya Pratap Singh",
+                                                "email": "aditya.singh@example.com",
                                                 "role": "USER",
                                                 "profileUrl": null,
                                                 "emailVerified": true,
@@ -1103,6 +1103,20 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/User"
+                                },
+                                "examples": {
+                                    "profile": {
+                                        "value": {
+                                            "id": "a5b8f9b5-1234-4c7a-9b9b-abcdef123456",
+                                            "name": "Akhand Shukla",
+                                            "email": "akhand.shukla@example.com",
+                                            "role": "USER",
+                                            "profileUrl": "/uploads/profile-pictures/1700000000000-123456-avatar.png",
+                                            "emailVerified": true,
+                                            "createdAt": "2025-01-01T12:00:00.000Z",
+                                            "updatedAt": "2025-01-02T08:30:00.000Z"
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -1128,6 +1142,14 @@
                         "application/json": {
                             "schema": {
                                 "$ref": "#/components/schemas/UpdateProfileRequest"
+                            },
+                            "examples": {
+                                "updateNameAndProfile": {
+                                    "value": {
+                                        "name": "Gagan Gupta",
+                                        "profileUrl": "https://cdn.example.com/avatars/gagan.png"
+                                    }
+                                }
                             }
                         }
                     }
@@ -1139,6 +1161,20 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/User"
+                                },
+                                "examples": {
+                                    "updated": {
+                                        "value": {
+                                            "id": "a5b8f9b5-1234-4c7a-9b9b-abcdef123456",
+                                            "name": "Vishwajeet Gupta",
+                                            "email": "vishwajeet.gupta@example.com",
+                                            "role": "USER",
+                                            "profileUrl": "https://cdn.example.com/avatars/vishwajeet.png",
+                                            "emailVerified": true,
+                                            "createdAt": "2025-01-01T12:00:00.000Z",
+                                            "updatedAt": "2025-01-03T09:15:00.000Z"
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -1176,6 +1212,14 @@
                         "application/json": {
                             "schema": {
                                 "$ref": "#/components/schemas/ChangePasswordRequest"
+                            },
+                            "examples": {
+                                "changePassword": {
+                                    "value": {
+                                        "currentPassword": "OldPassword1!",
+                                        "newPassword": "NewPassword1!"
+                                    }
+                                }
                             }
                         }
                     }
@@ -1187,6 +1231,13 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/MessageResponse"
+                                },
+                                "examples": {
+                                    "success": {
+                                        "value": {
+                                            "message": "Password changed successfully"
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -1197,6 +1248,13 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "invalidCurrentPassword": {
+                                        "value": {
+                                            "error": "Current password is incorrect"
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -1225,6 +1283,13 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/MessageResponse"
+                                },
+                                "examples": {
+                                    "success": {
+                                        "value": {
+                                            "message": "Account deleted successfully"
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -1272,6 +1337,20 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/User"
+                                },
+                                "examples": {
+                                    "updated": {
+                                        "value": {
+                                            "id": "a5b8f9b5-1234-4c7a-9b9b-abcdef123456",
+                                            "name": "Trishak Jaiswaal",
+                                            "email": "trishak.jaiswaal@example.com",
+                                            "role": "USER",
+                                            "profileUrl": "/uploads/profile-pictures/1700000000000-123456-avatar.png",
+                                            "emailVerified": true,
+                                            "createdAt": "2025-01-01T12:00:00.000Z",
+                                            "updatedAt": "2025-01-02T08:45:00.000Z"
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -1282,6 +1361,13 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "invalidType": {
+                                        "value": {
+                                            "error": "Only image uploads are allowed"
+                                        }
+                                    }
                                 }
                             }
                         }
