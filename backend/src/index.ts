@@ -23,12 +23,25 @@ app.use(sanitizationMiddleware);
 app.use('/uploads', express.static(path.resolve(process.cwd(), 'uploads')));
 
 // Serve OpenAPI documentation
-const openApiPath = path.resolve(process.cwd(), 'backend', 'src', 'docs', 'openapi.json');
+const openApiCandidatePaths = [
+  // When running via ts-node-dev from backend directory
+  path.resolve(__dirname, 'docs', 'openapi.json'),
+  // When running compiled JS from dist with docs copied alongside src structure
+  path.resolve(__dirname, 'src', 'docs', 'openapi.json'),
+  // Fallbacks when running from monorepo root
+  path.resolve(process.cwd(), 'backend', 'src', 'docs', 'openapi.json'),
+  path.resolve(process.cwd(), 'src', 'docs', 'openapi.json'),
+];
+
 let cachedOpenApi: unknown | null = null;
 
 app.get('/api/docs/openapi.json', (_req, res) => {
   try {
     if (!cachedOpenApi) {
+      const openApiPath =
+        openApiCandidatePaths.find((p) => fs.existsSync(p)) ||
+        openApiCandidatePaths[0];
+
       const raw = fs.readFileSync(openApiPath, 'utf-8');
       cachedOpenApi = JSON.parse(raw);
     }

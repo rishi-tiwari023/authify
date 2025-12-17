@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { AnyZodObject, ZodError } from 'zod';
+import type { ZodError, ZodIssue, ZodTypeAny } from 'zod';
 
 interface ValidationErrorResponse {
   error: string;
@@ -12,14 +12,14 @@ interface ValidationErrorResponse {
 function formatZodError(error: ZodError): ValidationErrorResponse {
   return {
     error: 'Validation failed',
-    details: error.errors.map((issue) => ({
+    details: error.issues.map((issue: ZodIssue) => ({
       path: issue.path.join('.'),
       message: issue.message,
     })),
   };
 }
 
-export function validateBody(schema: AnyZodObject) {
+export function validateBody(schema: ZodTypeAny) {
   return (req: Request, res: Response, next: NextFunction): void => {
     const result = schema.safeParse(req.body);
     if (!result.success) {
