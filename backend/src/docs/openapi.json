@@ -661,6 +661,24 @@
                                             "$ref": "#/components/schemas/User"
                                         }
                                     }
+                                },
+                                "examples": {
+                                    "success": {
+                                        "value": {
+                                            "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                                            "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                                            "user": {
+                                                "id": "a5b8f9b5-1234-4c7a-9b9b-abcdef123456",
+                                                "name": "Jane Doe",
+                                                "email": "jane@example.com",
+                                                "role": "USER",
+                                                "profileUrl": null,
+                                                "emailVerified": true,
+                                                "createdAt": "2025-01-01T12:00:00.000Z",
+                                                "updatedAt": "2025-01-02T08:30:00.000Z"
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -671,6 +689,13 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "expired": {
+                                        "value": {
+                                            "error": "Invalid refresh token"
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -883,6 +908,13 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/MessageResponse"
+                                },
+                                "examples": {
+                                    "requested": {
+                                        "value": {
+                                            "message": "If the email exists, a password reset link has been sent"
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -913,6 +945,13 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/MessageResponse"
+                                },
+                                "examples": {
+                                    "success": {
+                                        "value": {
+                                            "message": "Password reset successfully"
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -923,6 +962,13 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "invalidToken": {
+                                        "value": {
+                                            "error": "Invalid or expired reset token"
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -953,6 +999,13 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/MessageResponse"
+                                },
+                                "examples": {
+                                    "success": {
+                                        "value": {
+                                            "message": "Email verified successfully"
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -963,6 +1016,13 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "invalidToken": {
+                                        "value": {
+                                            "error": "Invalid or expired verification token"
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -988,6 +1048,13 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/MessageResponse"
+                                },
+                                "examples": {
+                                    "success": {
+                                        "value": {
+                                            "message": "Verification email sent successfully"
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -998,6 +1065,13 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ErrorResponse"
+                                },
+                                "examples": {
+                                    "alreadyVerified": {
+                                        "value": {
+                                            "error": "Email is already verified"
+                                        }
+                                    }
                                 }
                             }
                         }
