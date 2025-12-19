@@ -324,4 +324,130 @@ describe('Integration: Profile Management', () => {
     expect(updatedProfile.profileUrl).toBe('https://example.com/avatar.jpg');
     expect(users.find((u) => u.id === userId)?.profileUrl).toBe('https://example.com/avatar.jpg');
   });
+
+  it('allows authenticated user to change their password with correct current password', async () => {
+    // Signup to create user
+    const signupRes = await signupUser(authController, {
+      name: 'Bob Wilson',
+      email: 'bob@example.com',
+      password: 'OldPassword1!',
+    });
+
+    const signupPayload = signupRes.json.mock.calls[0][0];
+    const userId = signupPayload.user.id;
+    const userBeforeChange = users.find((u) => u.id === userId);
+
+    // Change password
+    const changePasswordRes = createMockResponse();
+    const mockReq = {
+      user: {
+        id: userId,
+        email: 'bob@example.com',
+        role: UserRole.USER,
+      },
+      body: {
+        currentPassword: 'OldPassword1!',
+        newPassword: 'NewPassword1!',
+      },
+    } as any;
+
+    await userController.changePassword(mockReq, asExpressResponse(changePasswordRes));
+
+    expect(changePasswordRes.json).toHaveBeenCalledWith({ message: 'Password changed successfully' });
+    const userAfterChange = users.find((u) => u.id === userId);
+    expect(userAfterChange?.password).toBe('hashed-NewPassword1!');
+    expect(userAfterChange?.password).not.toBe(userBeforeChange?.password);
+  });
+
+  it('rejects password change when current password is incorrect', async () => {
+    // Signup to create user
+    const signupRes = await signupUser(authController, {
+      name: 'Charlie Davis',
+      email: 'charlie@example.com',
+      password: 'CorrectPassword1!',
+    });
+
+    const signupPayload = signupRes.json.mock.calls[0][0];
+    const userId = signupPayload.user.id;
+
+    // Attempt to change password with wrong current password
+    const changePasswordRes = createMockResponse();
+    const mockReq = {
+      user: {
+        id: userId,
+        email: 'charlie@example.com',
+        role: UserRole.USER,
+      },
+      body: {
+        currentPassword: 'WrongPassword1!',
+        newPassword: 'NewPassword1!',
+      },
+    } as any;
+
+    await userController.changePassword(mockReq, asExpressResponse(changePasswordRes));
+
+    expect(changePasswordRes.status).toHaveBeenCalledWith(401);
+  });
+
+  it('allows authenticated user to delete their own account', async () => {
+    // Signup to create user
+    const signupRes = await signupUser(authController, {
+      name: 'David Miller',
+      email: 'david@example.com',
+      password: 'Password1!',
+    });
+
+    const signupPayload = signupRes.json.mock.calls[0][0];
+    const userId = signupPayload.user.id;
+    expect(users).toHaveLength(1);
+
+    // Delete account
+    const deleteAccountRes = createMockResponse();
+    const mockReq = {
+      user: {
+        id: userId,
+        email: 'david@example.com',
+        role: UserRole.USER,
+      },
+    } as any;
+
+    await userController.deleteAccount(mockReq, asExpressResponse(deleteAccountRes));
+
+    expect(deleteAccountRes.json).toHaveBeenCalledWith({ message: 'Account deleted successfully' });
+    expect(users).toHaveLength(0);
+    expect(users.find((u) => u.id === userId)).toBeUndefined();
+  });
+
+  it('rejects profile update when email is already in use by another user', async () => {
+    // Create two users
+    const signupRes1 = await signupUser(authController, {
+      name: 'User One',
+      email: 'user1@example.com',
+      password: 'Password1!',
+    });
+    const signupRes2 = await signupUser(authController, {
+      name: 'User Two',
+      email: 'user2@example.com',
+      password: 'Password1!',
+    });
+
+    const userId1 = signupRes1.json.mock.calls[0][0].user.id;
+
+    // Try to update user1's email to user2's email
+    const updateProfileRes = createMockResponse();
+    const mockReq = {
+      user: {
+        id: userId1,
+        email: 'user1@example.com',
+        role: UserRole.USER,
+      },
+      body: {
+        email: 'user2@example.com',
+      },
+    } as any;
+
+    await userController.updateProfile(mockReq, asExpressResponse(updateProfileRes));
+
+    expect(updateProfileRes.status).toHaveBeenCalledWith(400);
+  });
 });
