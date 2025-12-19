@@ -297,4 +297,81 @@ describe('Integration: Admin Endpoints', () => {
     expect(result.limit).toBe(20);
     expect(result.totalPages).toBe(1);
   });
+
+  it('allows admin user to filter users by role', async () => {
+    // Create admin user and regular users
+    await createUser({
+      name: 'Admin User',
+      email: 'admin@example.com',
+      password: 'Password1!',
+    }, UserRole.ADMIN);
+
+    await createUser({
+      name: 'Regular User',
+      email: 'regular@example.com',
+      password: 'Password1!',
+    }, UserRole.USER);
+
+    const adminUser = users.find((u) => u.role === UserRole.ADMIN)!;
+
+    // List only USER role users
+    const listUsersRes = createMockResponse();
+    const mockReq = {
+      query: { page: '1', limit: '20', role: 'USER' },
+      user: {
+        id: adminUser.id,
+        email: adminUser.email,
+        role: UserRole.ADMIN,
+      },
+    } as any;
+
+    await authController.listUsers(mockReq, asExpressResponse(listUsersRes));
+
+    expect(listUsersRes.json).toHaveBeenCalled();
+    const result = listUsersRes.json.mock.calls[0][0];
+    expect(result.data).toHaveLength(1);
+    expect(result.data[0].role).toBe(UserRole.USER);
+    expect(result.total).toBe(1);
+  });
+
+  it('allows admin user to search users by name or email', async () => {
+    // Create multiple users
+    await createUser({
+      name: 'Admin User',
+      email: 'admin@example.com',
+      password: 'Password1!',
+    }, UserRole.ADMIN);
+
+    await createUser({
+      name: 'John Doe',
+      email: 'john@example.com',
+      password: 'Password1!',
+    }, UserRole.USER);
+
+    await createUser({
+      name: 'Jane Smith',
+      email: 'jane@example.com',
+      password: 'Password1!',
+    }, UserRole.USER);
+
+    const adminUser = users.find((u) => u.role === UserRole.ADMIN)!;
+
+    // Search for users with "john" in name or email
+    const listUsersRes = createMockResponse();
+    const mockReq = {
+      query: { page: '1', limit: '20', search: 'john' },
+      user: {
+        id: adminUser.id,
+        email: adminUser.email,
+        role: UserRole.ADMIN,
+      },
+    } as any;
+
+    await authController.listUsers(mockReq, asExpressResponse(listUsersRes));
+
+    expect(listUsersRes.json).toHaveBeenCalled();
+    const result = listUsersRes.json.mock.calls[0][0];
+    expect(result.data.length).toBeGreaterThan(0);
+    expect(result.data.some((u: SafeUser) => u.email.includes('john') || u.name.includes('John'))).toBe(true);
+  });
 });
