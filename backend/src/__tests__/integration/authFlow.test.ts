@@ -280,6 +280,81 @@ describe('Integration: Auth and Password Reset flows', () => {
     expect(payload.token).toBeDefined();
     expect(payload.user.email).toBe('john@example.com');
   });
+
+  it('allows refreshing access token using refresh token', async () => {
+    const controller = new AuthController();
+    
+    // Signup to get initial tokens
+    const signupRes = await signupUser(controller, {
+      name: 'Alice Smith',
+      email: 'alice@example.com',
+      password: 'Password1!',
+    });
+    
+    expect(signupRes.status).toHaveBeenCalledWith(201);
+    const signupPayload = signupRes.json.mock.calls[0][0];
+    const originalRefreshToken = signupPayload.refreshToken;
+    expect(originalRefreshToken).toBeDefined();
+    
+    // Use refresh token to get new access token
+    const refreshRes = createMockResponse();
+    await controller.refreshToken(
+      { body: { refreshToken: originalRefreshToken } } as any,
+      asExpressResponse(refreshRes)
+    );
+    
+    expect(refreshRes.json).toHaveBeenCalled();
+    const refreshPayload = refreshRes.json.mock.calls[0][0];
+    expect(refreshPayload.token).toBeDefined();
+    expect(refreshPayload.refreshToken).toBeDefined();
+    expect(refreshPayload.user.email).toBe('alice@example.com');
+    expect(refreshPayload.refreshToken).not.toBe(originalRefreshToken);
+  });
+
+  it('returns current user information via me endpoint', async () => {
+    const controller = new AuthController();
+    
+    // Signup to create user and get token
+    const signupRes = await signupUser(controller, {
+      name: 'Bob Johnson',
+      email: 'bob@example.com',
+      password: 'Password1!',
+    });
+    
+    const signupPayload = signupRes.json.mock.calls[0][0];
+    const accessToken = signupPayload.token;
+    
+    // Mock auth middleware by directly calling me with user info
+    const meRes = createMockResponse();
+    const mockReq = {
+      user: {
+        id: signupPayload.user.id,
+        email: signupPayload.user.email,
+        role: signupPayload.user.role,
+      },
+    } as any;
+    
+    await controller.me(mockReq, asExpressResponse(meRes));
+    
+    expect(meRes.json).toHaveBeenCalled();
+    const mePayload = meRes.json.mock.calls[0][0];
+    expect(mePayload.id).toBe(signupPayload.user.id);
+    expect(mePayload.email).toBe('bob@example.com');
+    expect(mePayload.name).toBe('Bob Johnson');
+    expect(mePayload.role).toBeDefined();
+  });
+
+  it('rejects invalid refresh token when attempting to refresh', async () => {
+    const controller = new AuthController();
+    
+    const refreshRes = createMockResponse();
+    await controller.refreshToken(
+      { body: { refreshToken: 'invalid-refresh-token' } } as any,
+      asExpressResponse(refreshRes)
+    );
+    
+    expect(refreshRes.status).toHaveBeenCalledWith(500);
+  });
 });
 
 
