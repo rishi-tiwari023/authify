@@ -186,3 +186,115 @@ jest.mock('../../repository/EmailVerificationTokenRepository', () => {
     })),
   };
 });
+
+jest.mock('../../service/EmailService', () => {
+  return {
+    EmailService: jest.fn().mockImplementation(() => emailServiceMock),
+  };
+});
+
+jest.mock('../../service/ActivityLogService', () => {
+  return {
+    ActivityLogService: jest.fn().mockImplementation(() => ({
+      log: activityLogMock,
+    })),
+  };
+});
+
+// Use deterministic hashing to simplify flow assertions
+jest.mock('bcrypt', () => ({
+  hash: jest.fn(async (value: string) => `hashed-${value}`),
+  compare: jest.fn(async (value: string, hashed: string) => hashed === `hashed-${value}`),
+}));
+
+// Stable tokens for deterministic tests
+jest.mock('crypto', () => ({
+  randomBytes: (len: number) => Buffer.from(`token-${len}`),
+}));
+
+interface MockResponse {
+  json: jest.Mock;
+  status: jest.Mock;
+}
+
+const createMockResponse = (): MockResponse => {
+  const json = jest.fn();
+  const status = jest.fn().mockReturnValue({ json });
+  return { json, status };
+};
+
+const asExpressResponse = (res: MockResponse): Response => res as unknown as Response;
+
+type SignupBody = { name: string; email: string; password: string };
+
+const createUser = async (body: SignupBody, role: UserRole = UserRole.USER): Promise<{ user: SafeUser }> => {
+  // Create user directly using the mocked UserRepository
+  // The mock is already set up, so we can use it directly
+  const { UserRepository } = require('../../repository/UserRepository');
+  const userRepository = new UserRepository();
+  const user = await userRepository.create({
+    name: body.name,
+    email: body.email,
+    password: 'hashed-' + body.password,
+    role,
+  });
+  return { user: user.toSafeJSON() };
+};
+
+describe('Integration: Admin Endpoints', () => {
+  let authController: AuthController;
+
+  beforeEach(() => {
+    users.splice(0, users.length);
+    resetTokens.splice(0, resetTokens.length);
+    verificationTokens.splice(0, verificationTokens.length);
+    jest.clearAllMocks();
+    process.env.JWT_SECRET = 'test-secret';
+    process.env.REFRESH_TOKEN_SECRET = 'test-refresh-secret';
+    authController = new AuthController();
+  });
+
+  it('allows admin user to list all users with pagination', async () => {
+    // Create admin user and regular users
+    const adminResult = await createUser({
+      name: 'Admin User',
+      email: 'admin@example.com',
+      password: 'Password1!',
+    }, UserRole.ADMIN);
+
+    await createUser({
+      name: 'User One',
+      email: 'user1@example.com',
+      password: 'Password1!',
+    }, UserRole.USER);
+
+    await createUser({
+      name: 'User Two',
+      email: 'user2@example.com',
+      password: 'Password1!',
+    }, UserRole.USER);
+
+    const adminUser = adminResult.user;
+
+    // List users as admin
+    const listUsersRes = createMockResponse();
+    const mockReq = {
+      query: { page: '1', limit: '20' },
+      user: {
+        id: adminUser.id,
+        email: adminUser.email,
+        role: UserRole.ADMIN,
+      },
+    } as any;
+
+    await authController.listUsers(mockReq, asExpressResponse(listUsersRes));
+
+    expect(listUsersRes.json).toHaveBeenCalled();
+    const result = listUsersRes.json.mock.calls[0][0];
+    expect(result.data).toHaveLength(3); // Admin + 2 users
+    expect(result.total).toBe(3);
+    expect(result.page).toBe(1);
+    expect(result.limit).toBe(20);
+    expect(result.totalPages).toBe(1);
+  });
+});
