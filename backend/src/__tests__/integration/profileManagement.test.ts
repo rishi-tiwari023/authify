@@ -184,3 +184,144 @@ jest.mock('bcrypt', () => ({
 jest.mock('crypto', () => ({
   randomBytes: (len: number) => Buffer.from(`token-${len}`),
 }));
+
+interface MockResponse {
+  json: jest.Mock;
+  status: jest.Mock;
+}
+
+const createMockResponse = (): MockResponse => {
+  const json = jest.fn();
+  const status = jest.fn().mockReturnValue({ json });
+  return { json, status };
+};
+
+const asExpressResponse = (res: MockResponse): Response => res as unknown as Response;
+
+type SignupBody = { name: string; email: string; password: string };
+
+const signupUser = async (controller: AuthController, body: SignupBody) => {
+  const response = createMockResponse();
+  await controller.signup(
+    {
+      body,
+      headers: {},
+      ip: '127.0.0.1',
+    } as any,
+    asExpressResponse(response)
+  );
+  return response;
+};
+
+describe('Integration: Profile Management', () => {
+  let authController: AuthController;
+  let userController: UserController;
+
+  beforeEach(() => {
+    users.splice(0, users.length);
+    resetTokens.splice(0, resetTokens.length);
+    verificationTokens.splice(0, verificationTokens.length);
+    jest.clearAllMocks();
+    process.env.JWT_SECRET = 'test-secret';
+    process.env.REFRESH_TOKEN_SECRET = 'test-refresh-secret';
+    authController = new AuthController();
+    userController = new UserController();
+  });
+
+  it('allows authenticated user to retrieve their profile information', async () => {
+    // Signup to create user
+    const signupRes = await signupUser(authController, {
+      name: 'Jane Doe',
+      email: 'jane@example.com',
+      password: 'Password1!',
+    });
+
+    const signupPayload = signupRes.json.mock.calls[0][0];
+    const userId = signupPayload.user.id;
+
+    // Get profile
+    const getProfileRes = createMockResponse();
+    const mockReq = {
+      user: {
+        id: userId,
+        email: 'jane@example.com',
+        role: UserRole.USER,
+      },
+    } as any;
+
+    await userController.getProfile(mockReq, asExpressResponse(getProfileRes));
+
+    expect(getProfileRes.json).toHaveBeenCalled();
+    const profile = getProfileRes.json.mock.calls[0][0];
+    expect(profile.id).toBe(userId);
+    expect(profile.email).toBe('jane@example.com');
+    expect(profile.name).toBe('Jane Doe');
+  });
+
+  it('allows authenticated user to update their profile name and email', async () => {
+    // Signup to create user
+    const signupRes = await signupUser(authController, {
+      name: 'John Doe',
+      email: 'john@example.com',
+      password: 'Password1!',
+    });
+
+    const signupPayload = signupRes.json.mock.calls[0][0];
+    const userId = signupPayload.user.id;
+
+    // Update profile
+    const updateProfileRes = createMockResponse();
+    const mockReq = {
+      user: {
+        id: userId,
+        email: 'john@example.com',
+        role: UserRole.USER,
+      },
+      body: {
+        name: 'John Smith',
+        email: 'john.smith@example.com',
+      },
+    } as any;
+
+    await userController.updateProfile(mockReq, asExpressResponse(updateProfileRes));
+
+    expect(updateProfileRes.json).toHaveBeenCalled();
+    const updatedProfile = updateProfileRes.json.mock.calls[0][0];
+    expect(updatedProfile.name).toBe('John Smith');
+    expect(updatedProfile.email).toBe('john.smith@example.com');
+    expect(users.find((u) => u.id === userId)?.name).toBe('John Smith');
+    expect(users.find((u) => u.id === userId)?.email).toBe('john.smith@example.com');
+  });
+
+  it('allows authenticated user to update their profile picture URL', async () => {
+    // Signup to create user
+    const signupRes = await signupUser(authController, {
+      name: 'Alice Brown',
+      email: 'alice@example.com',
+      password: 'Password1!',
+    });
+
+    const signupPayload = signupRes.json.mock.calls[0][0];
+    const userId = signupPayload.user.id;
+
+    // Update profile with profile URL
+    const updateProfileRes = createMockResponse();
+    const mockReq = {
+      user: {
+        id: userId,
+        email: 'alice@example.com',
+        role: UserRole.USER,
+      },
+      body: {
+        profileUrl: 'https://example.com/avatar.jpg',
+      },
+    } as any;
+
+    await userController.updateProfile(mockReq, asExpressResponse(updateProfileRes));
+
+    expect(updateProfileRes.json).toHaveBeenCalled();
+    const updatedProfile = updateProfileRes.json.mock.calls[0][0];
+    expect(updatedProfile.profileUrl).toBe('https://example.com/avatar.jpg');
+    expect(users.find((u) => u.id === userId)?.profileUrl).toBe('https://example.com/avatar.jpg');
+  });
+});
