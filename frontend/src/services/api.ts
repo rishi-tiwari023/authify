@@ -280,6 +280,13 @@ class ApiService {
     })
   }
 
+  async verifyEmail(token: string): Promise<{ message: string }> {
+    return this.request<{ message: string }>('/auth/verify-email', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    })
+  }
+
   async getProfile(): Promise<User> {
     return this.request<User>('/user/profile')
   }
