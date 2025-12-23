@@ -75,8 +75,8 @@ export class EmailService {
     resetToken: string,
     resetUrl?: string
   ): Promise<void> {
-    const defaultResetUrl = resetUrl || `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`;
-    
+    const defaultResetUrl = resetUrl || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
+
     const subject = 'Password Reset Request';
     const html = `
       <!DOCTYPE html>
@@ -107,7 +107,7 @@ export class EmailService {
         </body>
       </html>
     `;
-    
+
     const text = `
 Password Reset Request
 
@@ -173,8 +173,8 @@ If you did not request this password reset, please ignore this email.
    * @param verificationToken - Email verification token
    */
   async sendVerificationEmail(email: string, name: string, verificationToken: string): Promise<void> {
-    const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify-email?token=${verificationToken}`;
-    
+    const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email?token=${verificationToken}`;
+
     const subject = 'Verify Your Email Address';
     const html = `
       <!DOCTYPE html>
@@ -206,7 +206,7 @@ If you did not request this password reset, please ignore this email.
         </body>
       </html>
     `;
-    
+
     const text = `
 Verify Your Email Address
 
