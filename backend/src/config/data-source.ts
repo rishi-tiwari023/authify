@@ -5,6 +5,7 @@ import { User } from '../model/User';
 import { PasswordResetToken } from '../model/PasswordResetToken';
 import { ActivityLog } from '../model/ActivityLog';
 import { EmailVerificationToken } from '../model/EmailVerificationToken';
+import { EmailLog } from '../model/EmailLog';
 
 dotenv.config();
 
@@ -15,7 +16,7 @@ export const AppDataSource = new DataSource({
   username: process.env.DB_USER || 'postgres',
   password: process.env.DB_PASSWORD || 'postgres',
   database: process.env.DB_NAME || 'authify',
-  entities: [User, PasswordResetToken, ActivityLog, EmailVerificationToken],
+  entities: [User, PasswordResetToken, ActivityLog, EmailVerificationToken, EmailLog],
   synchronize: true,
   logging: false,
 });
