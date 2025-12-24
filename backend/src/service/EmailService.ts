@@ -1,4 +1,8 @@
 import nodemailer, { Transporter } from 'nodemailer';
+import ejs from 'ejs';
+import path from 'path';
+import { EmailLog, EmailStatus } from '../model/EmailLog';
+import { emailLogRepository } from '../repository/EmailLogRepository';
 
 /**
  * Email service for sending emails (password reset, notifications, etc.)
@@ -6,8 +10,8 @@ import nodemailer, { Transporter } from 'nodemailer';
 export interface EmailOptions {
   to: string;
   subject: string;
-  html: string;
-  text?: string;
+  templateName: string;
+  data: Record<string, any>;
 }
 
 export class EmailService {
@@ -15,6 +19,7 @@ export class EmailService {
   private readonly fromName: string;
   private transporter: Transporter | null = null;
   private readonly emailEnabled: boolean;
+  private readonly maxRetries = 3;
 
   constructor() {
     this.fromEmail = process.env.EMAIL_FROM || 'noreply@authify.com';
@@ -32,36 +37,80 @@ export class EmailService {
         },
       });
     } else {
-      console.warn('[EmailService] SMTP credentials not configured. Emails will be logged to console.');
+      console.warn('[EmailService] SMTP credentials not configured. Emails will be logged to console and database as FAILED (simulated).');
     }
   }
 
   /**
-   * Send an email
+   * Render an EJS template
+   * @param templateName - Name of the template file (without extension)
+   * @param data - Data to inject into template
+   */
+  private async renderTemplate(templateName: string, data: Record<string, any>): Promise<string> {
+    const templatePath = path.join(__dirname, '../templates', `${templateName}.ejs`);
+    return await ejs.renderFile(templatePath, data);
+  }
+
+  /**
+   * Send an email with retry logic and logging
    * @param options - Email options
-   * @returns Promise that resolves when email is sent
    */
   async sendEmail(options: EmailOptions): Promise<void> {
+    const html = await this.renderTemplate(options.templateName, options.data);
+
+    let attempt = 0;
+    let sent = false;
+    let lastError = '';
+
     if (this.transporter) {
-      await this.transporter.sendMail({
-        from: `${this.fromName} <${this.fromEmail}>`,
-        to: options.to,
-        subject: options.subject,
-        text: options.text,
-        html: options.html,
-      });
-      return;
+      while (attempt < this.maxRetries && !sent) {
+        attempt++;
+        try {
+          await this.transporter.sendMail({
+            from: `${this.fromName} <${this.fromEmail}>`,
+            to: options.to,
+            subject: options.subject,
+            html: html,
+          });
+          sent = true;
+        } catch (error: any) {
+          lastError = error.message || 'Unknown error';
+          console.error(`[EmailService] Attempt ${attempt} failed:`, lastError);
+          if (attempt < this.maxRetries) {
+            await new Promise((resolve) => setTimeout(resolve, 1000 * attempt)); // Exponential backoff
+          }
+        }
+      }
+    } else {
+      // Fallback logging when transporter not configured
+      console.log('='.repeat(50));
+      console.log('[EmailService] SMTP not configured. Logging email instead:');
+      console.log('From:', `${this.fromName} <${this.fromEmail}>`);
+      console.log('To:', options.to);
+      console.log('Subject:', options.subject);
+      console.log('Template:', options.templateName);
+      console.log('Data:', JSON.stringify(options.data, null, 2));
+      console.log('='.repeat(50));
+      // We consider it "failed" for logging purposes if actual sending didn't happen, 
+      // or "sent" if we consider console logging as success in dev. 
+      // Let's mark as FAILED with message "SMTP not configured" for clarity in DB logs, 
+      // or maybe SENT if we want to avoid error noise in dev.
+      // Given the requirement "Add email delivery status tracking", let's log what actually happened.
+      lastError = 'SMTP not configured';
     }
 
-    // Fallback logging when transporter not configured
-    console.log('='.repeat(50));
-    console.log('[EmailService] SMTP not configured. Logging email instead:');
-    console.log('From:', `${this.fromName} <${this.fromEmail}>`);
-    console.log('To:', options.to);
-    console.log('Subject:', options.subject);
-    console.log('Text:', options.text || '(HTML only)');
-    console.log('HTML:', options.html);
-    console.log('='.repeat(50));
+    // Log to database
+    const emailLog = new EmailLog();
+    emailLog.recipient = options.to;
+    emailLog.subject = options.subject;
+    emailLog.status = sent ? EmailStatus.SENT : EmailStatus.FAILED;
+    emailLog.errorMessage = sent ? null : lastError;
+
+    try {
+      await emailLogRepository.save(emailLog);
+    } catch (dbError) {
+      console.error('[EmailService] Failed to save email log:', dbError);
+    }
   }
 
   /**
@@ -77,54 +126,11 @@ export class EmailService {
   ): Promise<void> {
     const defaultResetUrl = resetUrl || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/reset-password?token=${resetToken}`;
 
-    const subject = 'Password Reset Request';
-    const html = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .button { display: inline-block; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px; margin: 20px 0; }
-            .button:hover { background-color: #0056b3; }
-            .footer { margin-top: 30px; font-size: 12px; color: #666; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h1>Password Reset Request</h1>
-            <p>You have requested to reset your password. Click the button below to reset your password:</p>
-            <a href="${defaultResetUrl}" class="button">Reset Password</a>
-            <p>Or copy and paste this link into your browser:</p>
-            <p style="word-break: break-all;">${defaultResetUrl}</p>
-            <p>This link will expire in 1 hour.</p>
-            <p>If you did not request this password reset, please ignore this email.</p>
-            <div class="footer">
-              <p>This is an automated message, please do not reply.</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
-
-    const text = `
-Password Reset Request
-
-You have requested to reset your password. Visit the following link to reset your password:
-
-${defaultResetUrl}
-
-This link will expire in 1 hour.
-
-If you did not request this password reset, please ignore this email.
-    `;
-
     await this.sendEmail({
       to: email,
-      subject,
-      html,
-      text,
+      subject: 'Password Reset Request',
+      templateName: 'reset-password',
+      data: { resetUrl: defaultResetUrl },
     });
   }
 
@@ -134,35 +140,11 @@ If you did not request this password reset, please ignore this email.
    * @param name - User's name
    */
   async sendWelcomeEmail(email: string, name: string): Promise<void> {
-    const subject = 'Welcome to Authify!';
-    const html = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .footer { margin-top: 30px; font-size: 12px; color: #666; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h1>Welcome to Authify, ${name}!</h1>
-            <p>Thank you for signing up. Your account has been successfully created.</p>
-            <p>You can now log in and start using our services.</p>
-            <div class="footer">
-              <p>This is an automated message, please do not reply.</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
-
     await this.sendEmail({
       to: email,
-      subject,
-      html,
+      subject: 'Welcome to Authify!',
+      templateName: 'welcome',
+      data: { name },
     });
   }
 
@@ -175,57 +157,11 @@ If you did not request this password reset, please ignore this email.
   async sendVerificationEmail(email: string, name: string, verificationToken: string): Promise<void> {
     const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/verify-email?token=${verificationToken}`;
 
-    const subject = 'Verify Your Email Address';
-    const html = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <style>
-            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .button { display: inline-block; padding: 12px 24px; background-color: #007bff; color: white; text-decoration: none; border-radius: 4px; margin: 20px 0; }
-            .button:hover { background-color: #0056b3; }
-            .footer { margin-top: 30px; font-size: 12px; color: #666; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <h1>Verify Your Email Address</h1>
-            <p>Hello ${name},</p>
-            <p>Thank you for signing up! Please verify your email address by clicking the button below:</p>
-            <a href="${verificationUrl}" class="button">Verify Email</a>
-            <p>Or copy and paste this link into your browser:</p>
-            <p style="word-break: break-all;">${verificationUrl}</p>
-            <p>This link will expire in 24 hours.</p>
-            <p>If you did not create an account, please ignore this email.</p>
-            <div class="footer">
-              <p>This is an automated message, please do not reply.</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
-
-    const text = `
-Verify Your Email Address
-
-Hello ${name},
-
-Thank you for signing up! Please verify your email address by visiting the following link:
-
-${verificationUrl}
-
-This link will expire in 24 hours.
-
-If you did not create an account, please ignore this email.
-    `;
-
     await this.sendEmail({
       to: email,
-      subject,
-      html,
-      text,
+      subject: 'Verify Your Email Address',
+      templateName: 'verify-email',
+      data: { name, verificationUrl },
     });
   }
 
