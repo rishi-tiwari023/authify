@@ -4,6 +4,7 @@ import fs from 'fs';
 import { initializeDatabase, AppDataSource } from './config/data-source';
 import authRoutes from './routes/authRoutes';
 import userRoutes from './routes/userRoutes';
+import adminRoutes from './routes/adminRoutes';
 import { errorHandler } from './utils/errors';
 import { corsMiddleware } from './middleware/corsMiddleware';
 import { loggerMiddleware } from './middleware/loggerMiddleware';
@@ -83,6 +84,7 @@ app.get('/health', async (_req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/admin', adminRoutes);
 
 // 404 handler for unknown routes
 app.use((req, res) => {
@@ -97,24 +99,24 @@ app.use(errorHandler);
 
 async function bootstrap() {
   await initializeDatabase();
-  
+
   // Start token cleanup service
   const tokenCleanupService = new TokenCleanupService();
   tokenCleanupService.start();
-  
+
   // Graceful shutdown
   process.on('SIGTERM', () => {
     console.log('SIGTERM received, shutting down gracefully...');
     tokenCleanupService.stop();
     process.exit(0);
   });
-  
+
   process.on('SIGINT', () => {
     console.log('SIGINT received, shutting down gracefully...');
     tokenCleanupService.stop();
     process.exit(0);
   });
-  
+
   app.listen(PORT, () => {
     console.log(`🚀 Server running on http://localhost:${PORT}`);
     console.log('✅ Database connected');
