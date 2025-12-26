@@ -107,6 +107,12 @@ export class AuthController {
         return;
       }
 
+      if (user.isBanned) {
+        res.status(403).json({ error: 'Account is banned' });
+        return;
+      }
+
+
       const token = this.signToken({ id: user.id, email: user.email, role: user.role });
       const refreshToken = this.signRefreshToken({ id: user.id, email: user.email, role: user.role });
 
@@ -260,7 +266,7 @@ export class AuthController {
       }
 
       await this.authService.requestPasswordReset(email);
-      
+
       // Always return success message for security (don't reveal if email exists)
       res.json({
         message: 'If the email exists, a password reset link has been sent',
