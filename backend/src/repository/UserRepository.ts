@@ -60,5 +60,9 @@ export class UserRepository {
     const result = await this.repository.delete(id);
     return (result.affected ?? 0) > 0;
   }
+
+  async save(user: User): Promise<User> {
+    return await this.repository.save(user);
+  }
 }
 
