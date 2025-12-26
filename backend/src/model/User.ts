@@ -39,6 +39,9 @@ export class User {
   @Column({ type: 'boolean', default: false })
   emailVerified!: boolean;
 
+  @Column({ type: 'boolean', default: false })
+  isBanned!: boolean;
+
   @CreateDateColumn({ type: 'timestamp with time zone' })
   createdAt!: Date;
 
