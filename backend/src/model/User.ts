@@ -12,6 +12,7 @@ export interface SafeUser {
   role: UserRole;
   profileUrl: string | null;
   emailVerified: boolean;
+  twoFactorEnabled: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -41,6 +42,15 @@ export class User {
 
   @Column({ type: 'boolean', default: false })
   isBanned!: boolean;
+
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  twoFactorSecret!: string | null;
+
+  @Column({ type: 'boolean', default: false })
+  twoFactorEnabled!: boolean;
+
+  @Column({ type: 'jsonb', nullable: true })
+  twoFactorBackupCodes!: string[] | null;
 
   @CreateDateColumn({ type: 'timestamp with time zone' })
   createdAt!: Date;
@@ -81,6 +91,7 @@ export class User {
       role: this.role,
       profileUrl: this.profileUrl,
       emailVerified: this.emailVerified,
+      twoFactorEnabled: this.twoFactorEnabled,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
     };
