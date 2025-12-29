@@ -181,6 +181,111 @@ export class AuthService {
     return user;
   }
 
+  async setup2FA(userId: string): Promise<{ secret: string; dataUrl: string }> {
+    const user = await this.userRepository.findById(userId);
+    if (!user) {
+      throw new NotFoundError('User not found');
+    }
+
+    if (user.twoFactorEnabled) {
+      throw new ValidationError('2FA is already enabled');
+    }
+
+    // Generate new secret
+    const secret = this.twoFactorService.generateSecret();
+    const encryptedSecret = this.twoFactorService.encryptSecret(secret.base32);
+
+    // Save secret to user but keep 2FA disabled until verified
+    await this.userRepository.update(user.id, { twoFactorSecret: encryptedSecret });
+
+    // Generate QR code
+    const dataUrl = await this.twoFactorService.generateQRCode(secret.base32, user.email);
+
+    return {
+      secret: secret.base32,
+      dataUrl,
+    };
+  }
+
+  async enable2FA(userId: string, token: string): Promise<string[]> {
+    const user = await this.userRepository.findById(userId);
+    if (!user) {
+      throw new NotFoundError('User not found');
+    }
+
+    if (user.twoFactorEnabled) {
+      throw new ValidationError('2FA is already enabled');
+    }
+
+    if (!user.twoFactorSecret) {
+      throw new ValidationError('2FA setup not initiated');
+    }
+
+    // Verify token
+    const decryptedSecret = this.twoFactorService.decryptSecret(user.twoFactorSecret);
+    const isValid = this.twoFactorService.verifyToken(decryptedSecret, token);
+
+    if (!isValid) {
+      throw new ValidationError('Invalid verification code');
+    }
+
+    // Generate backup codes
+    const backupCodes = this.twoFactorService.generateBackupCodes();
+
+    // Enable 2FA and save backup codes
+    await this.userRepository.update(user.id, {
+      twoFactorEnabled: true,
+      twoFactorBackupCodes: backupCodes,
+    });
+
+    return backupCodes;
+  }
+
+  async disable2FA(userId: string, password: string): Promise<void> {
+    const user = await this.userRepository.findById(userId);
+    if (!user) {
+      throw new NotFoundError('User not found');
+    }
+
+    if (!user.twoFactorEnabled) {
+      throw new ValidationError('2FA is not enabled');
+    }
+
+    // Verify password
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      throw new ValidationError('Invalid password');
+    }
+
+    // Disable 2FA and clear secret/codes
+    await this.userRepository.update(user.id, {
+      twoFactorEnabled: false,
+      twoFactorSecret: null,
+      twoFactorBackupCodes: null,
+    });
+  }
+
+  async regenerateBackupCodes(userId: string): Promise<string[]> {
+    const user = await this.userRepository.findById(userId);
+    if (!user) {
+      throw new NotFoundError('User not found');
+    }
+
+    if (!user.twoFactorEnabled) {
+      throw new ValidationError('2FA is not enabled');
+    }
+
+    // Generate new backup codes
+    const backupCodes = this.twoFactorService.generateBackupCodes();
+
+    // Save new codes
+    await this.userRepository.update(user.id, {
+      twoFactorBackupCodes: backupCodes,
+    });
+
+    return backupCodes;
+  }
+
   async requestPasswordReset(email: string): Promise<PasswordResetToken> {
     if (!isValidEmail(email)) {
       throw new ValidationError('Invalid email format');

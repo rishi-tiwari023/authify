@@ -7,6 +7,7 @@ const userRepositoryMock = {
   findByEmail: jest.fn(),
   create: jest.fn(),
   update: jest.fn(),
+  findById: jest.fn(),
 };
 
 const passwordResetTokenRepositoryMock = {
@@ -29,6 +30,17 @@ const emailServiceMock = {
   sendPasswordResetEmail: jest.fn().mockResolvedValue(undefined),
 };
 
+const twoFactorServiceMock = {
+  generateSecret: jest.fn(),
+  generateBackupCodes: jest.fn(),
+  encryptSecret: jest.fn(),
+  decryptSecret: jest.fn(),
+  verifyToken: jest.fn(),
+  verifyBackupCode: jest.fn(),
+  removeBackupCode: jest.fn(),
+  generateQRCode: jest.fn(),
+};
+
 jest.mock('../../repository/UserRepository', () => ({
   UserRepository: jest.fn().mockImplementation(() => userRepositoryMock),
 }));
@@ -43,6 +55,10 @@ jest.mock('../../repository/EmailVerificationTokenRepository', () => ({
 
 jest.mock('../EmailService', () => ({
   EmailService: jest.fn().mockImplementation(() => emailServiceMock),
+}));
+
+jest.mock('../TwoFactorService', () => ({
+  TwoFactorService: jest.fn().mockImplementation(() => twoFactorServiceMock),
 }));
 
 jest.mock('bcrypt', () => ({
