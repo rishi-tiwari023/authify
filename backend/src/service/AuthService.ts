@@ -8,6 +8,7 @@ import { PasswordResetToken } from '../model/PasswordResetToken';
 import { EmailVerificationTokenRepository } from '../repository/EmailVerificationTokenRepository';
 import { EmailVerificationToken } from '../model/EmailVerificationToken';
 import { EmailService } from './EmailService';
+import { TwoFactorService } from './TwoFactorService';
 import * as crypto from 'crypto';
 
 export interface SignupData {
@@ -26,6 +27,7 @@ export class AuthService {
   private passwordResetTokenRepository: PasswordResetTokenRepository;
   private emailVerificationTokenRepository: EmailVerificationTokenRepository;
   private emailService: EmailService;
+  private twoFactorService: TwoFactorService;
   private readonly saltRounds = 10;
 
   constructor() {
@@ -33,6 +35,7 @@ export class AuthService {
     this.passwordResetTokenRepository = new PasswordResetTokenRepository();
     this.emailVerificationTokenRepository = new EmailVerificationTokenRepository();
     this.emailService = new EmailService();
+    this.twoFactorService = new TwoFactorService();
   }
 
   async signup(data: SignupData): Promise<User> {
@@ -128,7 +131,7 @@ export class AuthService {
     await this.emailVerificationTokenRepository.markAsUsed(verificationToken.id);
   }
 
-  async login(data: LoginData): Promise<User | null> {
+  async login(data: LoginData): Promise<User | { requires2FA: true; userId: string } | null> {
     if (!isValidEmail(data.email)) {
       throw new ValidationError('Invalid email format');
     }
@@ -141,6 +144,37 @@ export class AuthService {
     // Verify password hash
     const isPasswordValid = await bcrypt.compare(data.password, user.password);
     if (!isPasswordValid) {
+      return null;
+    }
+
+    if (user.twoFactorEnabled) {
+      return { requires2FA: true, userId: user.id };
+    }
+
+    return user;
+  }
+
+  async verifyLoginWith2FA(userId: string, token: string): Promise<User | null> {
+    const user = await this.userRepository.findById(userId);
+    if (!user || !user.twoFactorEnabled || !user.twoFactorSecret) {
+      return null;
+    }
+
+    // Attempt to verify with TOTP token
+    const decryptedSecret = this.twoFactorService.decryptSecret(user.twoFactorSecret);
+    let isValid = this.twoFactorService.verifyToken(decryptedSecret, token);
+
+    // If TOTP fails, check backup codes
+    if (!isValid) {
+      isValid = this.twoFactorService.verifyBackupCode(user, token);
+      if (isValid) {
+        // If backup code used, remove it
+        const updatedBackupCodes = this.twoFactorService.removeBackupCode(user, token);
+        await this.userRepository.update(user.id, { twoFactorBackupCodes: updatedBackupCodes });
+      }
+    }
+
+    if (!isValid) {
       return null;
     }
 

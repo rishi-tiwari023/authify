@@ -6,7 +6,7 @@ import { AuthRequest } from '../middleware/authMiddleware';
 import { UserRepository } from '../repository/UserRepository';
 import { ValidationError, NotFoundError, ForbiddenError } from '../utils/errors';
 import { RefreshTokenInput } from '../validation/authSchemas';
-import { UserRole } from '../model/User';
+import { User, UserRole } from '../model/User';
 import { UserService } from '../service/UserService';
 import { ActivityLogService } from '../service/ActivityLogService';
 import { safeLogActivity } from '../utils/activityLogger';
@@ -101,11 +101,22 @@ export class AuthController {
         return;
       }
 
-      const user = await this.authService.login({ email, password });
-      if (!user) {
+      const result = await this.authService.login({ email, password });
+      if (!result) {
         res.status(401).json({ error: 'Invalid credentials' });
         return;
       }
+
+      // Handle 2FA requirement
+      if ('requires2FA' in result && result.requires2FA) {
+        res.json({
+          requires2FA: true,
+          userId: result.userId
+        });
+        return;
+      }
+
+      const user = result as User;
 
       if (user.isBanned) {
         res.status(403).json({ error: 'Account is banned' });
