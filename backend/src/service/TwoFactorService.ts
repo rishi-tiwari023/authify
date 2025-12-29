@@ -1,5 +1,6 @@
 import * as speakeasy from 'speakeasy';
 import * as crypto from 'crypto';
+import * as QRCode from 'qrcode';
 import { ValidationError } from '../utils/errors';
 
 /**
@@ -208,19 +209,66 @@ export class TwoFactorService {
     }
 
     /**
-     * Verify a backup code for a user
+     * Generate a QR code for TOTP setup
      * 
-     * Checks if the provided backup code matches any of the user's stored backup codes.
-     * Backup codes are stored as hashed values for security.
-     * Once a backup code is used, it should be removed from the user's backup codes.
+     * Creates a QR code image that can be scanned by authenticator apps
+     * (Google Authenticator, Authy, etc.) to add the TOTP secret.
      * 
-     * @param {any} user - User object containing twoFactorBackupCodes array
-     * @param {string} code - The backup code to verify
-     * @returns {boolean} True if backup code is valid, false otherwise
-     * @throws {ValidationError} If user or code format is invalid
+     * @param {string} secret - The base32 encoded TOTP secret
+     * @param {string} email - User's email address for identification
+     * @returns {Promise<string>} Data URL of the QR code image
+     * @throws {ValidationError} If QR code generation fails
      * @example
-     * const isValid = twoFactorService.verifyBackupCode(user, 'A1B2C3D4');
+     * const qrCodeUrl = await twoFactorService.generateQRCode(secret, 'user@example.com');
+     * // Returns: "data:image/png;base64,iVBORw0KGgoAAAANS..."
      */
+    async generateQRCode(secret: string, email: string): Promise<string> {
+        try {
+            // Validate input
+            if (!secret || typeof secret !== 'string') {
+                throw new ValidationError('Invalid secret provided');
+            }
+
+            if (!email || typeof email !== 'string') {
+                throw new ValidationError('Invalid email provided');
+            }
+
+            // Generate otpauth:// URL
+            // Format: otpauth://totp/Issuer:Email?secret=SECRET&issuer=Issuer
+            const issuer = 'Authify';
+            const otpauthUrl = `otpauth://totp/${encodeURIComponent(issuer)}:${encodeURIComponent(email)}?secret=${secret}&issuer=${encodeURIComponent(issuer)}`;
+
+            // Generate QR code as data URL
+            const qrCodeDataUrl = await QRCode.toDataURL(otpauthUrl, {
+                errorCorrectionLevel: 'M',
+                type: 'image/png',
+                width: 300,
+                margin: 1,
+            });
+
+            return qrCodeDataUrl;
+        } catch (error) {
+            if (error instanceof ValidationError) {
+                throw error;
+            }
+            throw new ValidationError('Failed to generate QR code');
+        }
+    }
+
+    /**
+ * Verify a backup code for a user
+ * 
+ * Checks if the provided backup code matches any of the user's stored backup codes.
+ * Backup codes are stored as hashed values for security.
+ * Once a backup code is used, it should be removed from the user's backup codes.
+ * 
+ * @param {any} user - User object containing twoFactorBackupCodes array
+ * @param {string} code - The backup code to verify
+ * @returns {boolean} True if backup code is valid, false otherwise
+ * @throws {ValidationError} If user or code format is invalid
+ * @example
+ * const isValid = twoFactorService.verifyBackupCode(user, 'A1B2C3D4');
+ */
     verifyBackupCode(user: any, code: string): boolean {
         try {
             // Validate input
