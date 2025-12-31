@@ -1,8 +1,14 @@
 import type { Response } from 'express';
 import { SafeUser, UserRole } from '../../model/User';
 import { AuthController } from '../../controller/AuthController';
+import { TwoFactorService } from '../../service/TwoFactorService';
 
-type StoredUser = SafeUser & { password: string; toSafeJSON(): SafeUser };
+type StoredUser = SafeUser & {
+  password: string;
+  twoFactorSecret?: string | null;
+  twoFactorBackupCodes?: string[] | null;
+  toSafeJSON(): SafeUser;
+};
 type TokenRecord = {
   id: string;
   token: string;
@@ -52,6 +58,9 @@ jest.mock('../../repository/UserRepository', () => {
         profileUrl?: string | null;
         createdAt?: Date;
         updatedAt?: Date;
+        twoFactorEnabled?: boolean;
+        twoFactorSecret?: string | null;
+        twoFactorBackupCodes?: string[] | null;
       }) {
         const user: StoredUser = {
           id: `user-${users.length + 1}`,
@@ -63,6 +72,9 @@ jest.mock('../../repository/UserRepository', () => {
           profileUrl: data.profileUrl ?? null,
           createdAt: data.createdAt ?? new Date(),
           updatedAt: data.updatedAt ?? new Date(),
+          twoFactorEnabled: data.twoFactorEnabled ?? false,
+          twoFactorSecret: data.twoFactorSecret ?? null,
+          twoFactorBackupCodes: data.twoFactorBackupCodes ?? null,
           toSafeJSON(): SafeUser {
             return {
               id: this.id,
@@ -73,6 +85,7 @@ jest.mock('../../repository/UserRepository', () => {
               emailVerified: this.emailVerified,
               createdAt: this.createdAt,
               updatedAt: this.updatedAt,
+              twoFactorEnabled: this.twoFactorEnabled,
             };
           },
         };
@@ -171,9 +184,13 @@ jest.mock('bcrypt', () => ({
 }));
 
 // Stable tokens for deterministic tests
-jest.mock('crypto', () => ({
-  randomBytes: (len: number) => Buffer.from(`token-${len}`),
-}));
+jest.mock('crypto', () => {
+  const actualCrypto = jest.requireActual('crypto');
+  return {
+    ...actualCrypto,
+    randomBytes: (len: number) => Buffer.from(`token-${len}`),
+  };
+});
 
 interface MockResponse {
   json: jest.Mock;
@@ -211,6 +228,27 @@ describe('Integration: Auth and Password Reset flows', () => {
     jest.clearAllMocks();
     process.env.JWT_SECRET = 'test-secret';
     process.env.REFRESH_TOKEN_SECRET = 'test-refresh-secret';
+    process.env.TWO_FACTOR_ENCRYPTION_KEY = '01234567890123456789012345678901'; // 32 chars
+
+    // Mock TwoFactorService methods
+    jest.spyOn(TwoFactorService.prototype, 'generateSecret').mockReturnValue({
+      ascii: 'MOCKSECRET',
+      hex: '4d4f434b534543524554',
+      base32: 'MOCKSECRET',
+      otpauth_url: 'otpauth://totp/Authify?secret=MOCKSECRET',
+      google_auth_qr: 'otpauth://totp/Authify?secret=MOCKSECRET',
+    });
+    jest.spyOn(TwoFactorService.prototype, 'verifyToken').mockImplementation((secret, token) => token === '123456');
+    jest.spyOn(TwoFactorService.prototype, 'generateQRCode').mockResolvedValue('data:image/png;base64,mockqr');
+    jest.spyOn(TwoFactorService.prototype, 'generateBackupCodes').mockReturnValue(['backup1', 'backup2']);
+    jest.spyOn(TwoFactorService.prototype, 'encryptSecret').mockImplementation((s) => `encrypted-${s}`);
+    jest.spyOn(TwoFactorService.prototype, 'decryptSecret').mockImplementation((s) => s.replace('encrypted-', ''));
+    jest.spyOn(TwoFactorService.prototype, 'verifyBackupCode').mockImplementation((user, code) => code === 'backup1');
+    jest.spyOn(TwoFactorService.prototype, 'removeBackupCode').mockReturnValue(['backup2']);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   it('completes signup then login returning tokens and persisted user state', async () => {
@@ -283,26 +321,29 @@ describe('Integration: Auth and Password Reset flows', () => {
 
   it('allows refreshing access token using refresh token', async () => {
     const controller = new AuthController();
-    
+
     // Signup to get initial tokens
     const signupRes = await signupUser(controller, {
       name: 'Alice Smith',
       email: 'alice@example.com',
       password: 'Password1!',
     });
-    
+
     expect(signupRes.status).toHaveBeenCalledWith(201);
     const signupPayload = signupRes.json.mock.calls[0][0];
     const originalRefreshToken = signupPayload.refreshToken;
     expect(originalRefreshToken).toBeDefined();
-    
+
+    // Wait for at least 1 second to ensure iat changes
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
     // Use refresh token to get new access token
     const refreshRes = createMockResponse();
     await controller.refreshToken(
       { body: { refreshToken: originalRefreshToken } } as any,
       asExpressResponse(refreshRes)
     );
-    
+
     expect(refreshRes.json).toHaveBeenCalled();
     const refreshPayload = refreshRes.json.mock.calls[0][0];
     expect(refreshPayload.token).toBeDefined();
@@ -313,17 +354,17 @@ describe('Integration: Auth and Password Reset flows', () => {
 
   it('returns current user information via me endpoint', async () => {
     const controller = new AuthController();
-    
+
     // Signup to create user and get token
     const signupRes = await signupUser(controller, {
       name: 'Bob Johnson',
       email: 'bob@example.com',
       password: 'Password1!',
     });
-    
+
     const signupPayload = signupRes.json.mock.calls[0][0];
     const accessToken = signupPayload.token;
-    
+
     // Mock auth middleware by directly calling me with user info
     const meRes = createMockResponse();
     const mockReq = {
@@ -333,9 +374,9 @@ describe('Integration: Auth and Password Reset flows', () => {
         role: signupPayload.user.role,
       },
     } as any;
-    
+
     await controller.me(mockReq, asExpressResponse(meRes));
-    
+
     expect(meRes.json).toHaveBeenCalled();
     const mePayload = meRes.json.mock.calls[0][0];
     expect(mePayload.id).toBe(signupPayload.user.id);
@@ -346,14 +387,121 @@ describe('Integration: Auth and Password Reset flows', () => {
 
   it('rejects invalid refresh token when attempting to refresh', async () => {
     const controller = new AuthController();
-    
+
     const refreshRes = createMockResponse();
     await controller.refreshToken(
       { body: { refreshToken: 'invalid-refresh-token' } } as any,
       asExpressResponse(refreshRes)
     );
-    
+
     expect(refreshRes.status).toHaveBeenCalledWith(500);
+  });
+
+  it('supports full 2FA setup and login flow', async () => {
+    const controller = new AuthController();
+
+    // 1. Signup
+    const signupRes = await signupUser(controller, {
+      name: '2FA User',
+      email: '2fa@example.com',
+      password: 'Password1!',
+    });
+    const signupPayload = signupRes.json.mock.calls[0][0];
+    const user = signupPayload.user;
+    const token = signupPayload.token;
+
+    // 2. Initiate 2FA Setup
+    const setupRes = createMockResponse();
+    const setupReq = {
+      user: { id: user.id, email: user.email, role: user.role },
+      headers: {}
+    } as any;
+
+    await controller.setup2FA(setupReq, asExpressResponse(setupRes));
+
+    expect(setupRes.json).toHaveBeenCalled();
+    const setupPayload = setupRes.json.mock.calls[0][0];
+    expect(setupPayload.secret).toBe('MOCKSECRET');
+    expect(setupPayload.dataUrl).toContain('data:image/png;base64');
+
+    // 3. Enable 2FA with valid token (123456)
+    const enableRes = createMockResponse();
+    const enableReq = {
+      user: { id: user.id, email: user.email, role: user.role },
+      body: { token: '123456' },
+      headers: {}
+    } as any;
+
+    await controller.enable2FA(enableReq, asExpressResponse(enableRes));
+
+    expect(enableRes.json).toHaveBeenCalled();
+    const enablePayload = enableRes.json.mock.calls[0][0];
+    expect(enablePayload.backupCodes).toEqual(['backup1', 'backup2']);
+
+    // Verify user state - 2FA should be enabled
+    const updatedUser = users.find(u => u.id === user.id);
+    expect(updatedUser?.twoFactorEnabled).toBe(true);
+    expect(updatedUser?.twoFactorSecret).toBe('encrypted-MOCKSECRET');
+    expect(updatedUser?.twoFactorBackupCodes).toEqual(['backup1', 'backup2']); // In-memory simplified storage
+
+    // 4. Login with 2FA enabled - should return requires2FA
+    const loginRes = createMockResponse();
+    await controller.login(
+      { body: { email: '2fa@example.com', password: 'Password1!' }, headers: {}, ip: '127.0.0.1' } as any,
+      asExpressResponse(loginRes)
+    );
+
+    const loginPayload = loginRes.json.mock.calls[0][0];
+    expect(loginPayload.requires2FA).toBe(true);
+    expect(loginPayload.userId).toBe(user.id);
+    expect(loginPayload.token).toBeUndefined();
+
+    // 5. Verify 2FA Login with valid token
+    const verifyRes = createMockResponse();
+    await controller.verify2FA(
+      { body: { userId: user.id, token: '123456' }, headers: {} } as any,
+      asExpressResponse(verifyRes)
+    );
+
+    const verifyPayload = verifyRes.json.mock.calls[0][0];
+    expect(verifyPayload.token).toBeDefined();
+    expect(verifyPayload.user.email).toBe('2fa@example.com');
+
+    // 6. Verify 2FA Login with invalid token
+    const invalidVerifyRes = createMockResponse();
+    await controller.verify2FA(
+      { body: { userId: user.id, token: 'wrong' }, headers: {} } as any,
+      asExpressResponse(invalidVerifyRes)
+    );
+
+    expect(invalidVerifyRes.status).toHaveBeenCalledWith(401);
+
+    // 7. Verify 2FA Login with backup code
+    const backupVerifyRes = createMockResponse();
+    await controller.verify2FA(
+      { body: { userId: user.id, token: 'backup1' }, headers: {} } as any,
+      asExpressResponse(backupVerifyRes)
+    );
+
+    const backupVerifyPayload = backupVerifyRes.json.mock.calls[0][0];
+    expect(backupVerifyPayload.token).toBeDefined();
+
+    // 8. Disable 2FA
+    const disableRes = createMockResponse();
+    const disableReq = {
+      user: { id: user.id, email: user.email, role: user.role },
+      body: { password: 'Password1!' },
+      headers: {}
+    } as any;
+
+    await controller.disable2FA(disableReq, asExpressResponse(disableRes));
+
+    expect(disableRes.json).toHaveBeenCalledWith({ message: '2FA disabled successfully' });
+
+    // Verify user state - 2FA should be disabled
+    const disabledUser = users.find(u => u.id === user.id);
+    expect(disabledUser?.twoFactorEnabled).toBe(false);
+    expect(disabledUser?.twoFactorSecret).toBeNull();
   });
 });
 
