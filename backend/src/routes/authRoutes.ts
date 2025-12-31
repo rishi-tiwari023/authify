@@ -10,6 +10,11 @@ import {
   resetPasswordSchema,
   refreshTokenSchema,
   verifyEmailSchema,
+  setup2FASchema,
+  enable2FASchema,
+  verify2FASchema,
+  disable2FASchema,
+  regenerateBackupCodesSchema,
 } from '../validation/authSchemas';
 import { updateUserRoleSchema } from '../validation/userSchemas';
 
@@ -111,6 +116,50 @@ router.post('/verify-email', publicAuthRateLimit, validateBody(verifyEmailSchema
  * @header Authorization: Bearer <token>
  */
 router.post('/resend-verification', authMiddleware, (req, res) => authController.resendVerificationEmail(req as any, res));
+
+/**
+ * @route POST /api/auth/2fa/setup
+ * @desc Initiate 2FA setup (returns secret and QR code)
+ * @access Private
+ * @header Authorization: Bearer <token>
+ */
+router.post('/2fa/setup', authMiddleware, validateBody(setup2FASchema), (req, res) => authController.setup2FA(req as any, res));
+
+/**
+ * @route POST /api/auth/2fa/enable
+ * @desc Enable 2FA with verification code
+ * @access Private
+ * @header Authorization: Bearer <token>
+ * @body {string} token - 6-digit TOTP code
+ */
+router.post('/2fa/enable', authMiddleware, validateBody(enable2FASchema), (req, res) => authController.enable2FA(req as any, res));
+
+/**
+ * @route POST /api/auth/2fa/verify
+ * @desc Verify 2FA code during login
+ * @access Public
+ * @body {string} userId - User ID from login response
+ * @body {string} token - 6-digit TOTP code or backup code
+ */
+router.post('/2fa/verify', publicAuthRateLimit, validateBody(verify2FASchema), (req, res) => authController.verify2FA(req, res));
+
+/**
+ * @route POST /api/auth/2fa/disable
+ * @desc Disable 2FA
+ * @access Private
+ * @header Authorization: Bearer <token>
+ * @body {string} password - Current password
+ */
+router.post('/2fa/disable', authMiddleware, validateBody(disable2FASchema), (req, res) => authController.disable2FA(req as any, res));
+
+/**
+ * @route POST /api/auth/2fa/backup-codes
+ * @desc Regenerate backup codes
+ * @access Private
+ * @header Authorization: Bearer <token>
+ * @body {string} password - Current password
+ */
+router.post('/2fa/backup-codes', authMiddleware, validateBody(regenerateBackupCodesSchema), (req, res) => authController.regenerateBackupCodes(req as any, res));
 
 export default router;
 
