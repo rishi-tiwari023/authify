@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { AuthService } from '../service/AuthService';
+import * as bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import type { SignOptions, Secret } from 'jsonwebtoken';
 import { AuthRequest } from '../middleware/authMiddleware';
@@ -109,6 +110,12 @@ export class AuthController {
 
       // Handle 2FA requirement
       if ('requires2FA' in result && result.requires2FA) {
+        safeLogActivity(this.activityLogService, {
+          userId: result.userId,
+          action: 'login_2fa_required',
+          req
+        });
+
         res.json({
           requires2FA: true,
           userId: result.userId
@@ -140,6 +147,171 @@ export class AuthController {
         return;
       }
       handleControllerError(res, error, 500, 'Login failed');
+    }
+  }
+
+  async setup2FA(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: 'Authentication required' });
+        return;
+      }
+
+      const result = await this.authService.setup2FA(req.user.id);
+
+      safeLogActivity(this.activityLogService, {
+        userId: req.user.id,
+        action: 'setup_2fa_initiated',
+        req
+      });
+
+      res.json(result);
+    } catch (error) {
+      if (error instanceof ValidationError || error instanceof NotFoundError) {
+        res.status(error.statusCode).json({ error: error.message });
+        return;
+      }
+      handleControllerError(res, error, 500, 'Failed to setup 2FA');
+    }
+  }
+
+  async enable2FA(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: 'Authentication required' });
+        return;
+      }
+
+      const { token } = req.body;
+      if (!token) {
+        res.status(400).json({ error: 'Token is required' });
+        return;
+      }
+
+      const backupCodes = await this.authService.enable2FA(req.user.id, token);
+
+      safeLogActivity(this.activityLogService, {
+        userId: req.user.id,
+        action: 'enable_2fa_completed',
+        req
+      });
+
+      res.json({ backupCodes });
+    } catch (error) {
+      if (error instanceof ValidationError || error instanceof NotFoundError) {
+        res.status(error.statusCode).json({ error: error.message });
+        return;
+      }
+      handleControllerError(res, error, 500, 'Failed to enable 2FA');
+    }
+  }
+
+  async verify2FA(req: Request, res: Response): Promise<void> {
+    try {
+      const { userId, token } = req.body;
+
+      if (!userId || !token) {
+        res.status(400).json({ error: 'User ID and token are required' });
+        return;
+      }
+
+      const user = await this.authService.verifyLoginWith2FA(userId, token);
+      if (!user) {
+        res.status(401).json({ error: 'Invalid verification code' });
+        return;
+      }
+
+      const authToken = this.signToken({ id: user.id, email: user.email, role: user.role });
+      const refreshToken = this.signRefreshToken({ id: user.id, email: user.email, role: user.role });
+
+      safeLogActivity(this.activityLogService, {
+        userId: user.id,
+        action: 'login_2fa_verification_success',
+        req
+      });
+
+      res.json({
+        user: user.toSafeJSON(),
+        token: authToken,
+        refreshToken,
+      });
+
+    } catch (error) {
+      handleControllerError(res, error, 500, 'Failed to verify 2FA');
+    }
+  }
+
+  async disable2FA(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: 'Authentication required' });
+        return;
+      }
+
+      const { password } = req.body;
+      if (!password) {
+        res.status(400).json({ error: 'Password is required' });
+        return;
+      }
+
+      await this.authService.disable2FA(req.user.id, password);
+
+      safeLogActivity(this.activityLogService, {
+        userId: req.user.id,
+        action: 'disable_2fa',
+        req
+      });
+
+      res.json({ message: '2FA disabled successfully' });
+    } catch (error) {
+      if (error instanceof ValidationError || error instanceof NotFoundError) {
+        res.status(error.statusCode).json({ error: error.message });
+        return;
+      }
+      handleControllerError(res, error, 500, 'Failed to disable 2FA');
+    }
+  }
+
+  async regenerateBackupCodes(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: 'Authentication required' });
+        return;
+      }
+
+      const { password } = req.body;
+      if (!password) {
+        res.status(400).json({ error: 'Password is required' });
+        return;
+      }
+
+      const user = await this.userRepository.findById(req.user.id);
+      if (!user) {
+        res.status(404).json({ error: 'User not found' });
+        return;
+      }
+
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      if (!isPasswordValid) {
+        res.status(400).json({ error: 'Invalid password' });
+        return;
+      }
+
+      const backupCodes = await this.authService.regenerateBackupCodes(req.user.id);
+
+      safeLogActivity(this.activityLogService, {
+        userId: req.user.id,
+        action: 'regenerate_backup_codes',
+        req
+      });
+
+      res.json({ backupCodes });
+    } catch (error) {
+      if (error instanceof ValidationError || error instanceof NotFoundError) {
+        res.status(error.statusCode).json({ error: error.message });
+        return;
+      }
+      handleControllerError(res, error, 500, 'Failed to regenerate backup codes');
     }
   }
 
