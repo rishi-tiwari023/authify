@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { apiService } from '../services/api'
 import { getErrorMessage } from '../utils/errorMessages'
 import EmailValidationFeedback from './EmailValidationFeedback'
@@ -12,7 +12,6 @@ export default function ForgotPassword() {
   const [success, setSuccess] = useState(false)
   const [loading, setLoading] = useState(false)
   const [emailTouched, setEmailTouched] = useState(false)
-  const navigate = useNavigate()
 
   const validateEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
 

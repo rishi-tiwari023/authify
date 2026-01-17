@@ -14,6 +14,7 @@ export default function ChangePassword({ onSuccess, onCancel }: ChangePasswordPr
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [confirmPasswordTouched, setConfirmPasswordTouched] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -68,7 +69,7 @@ export default function ChangePassword({ onSuccess, onCancel }: ChangePasswordPr
       setCurrentPassword('')
       setNewPassword('')
       setConfirmPassword('')
-      
+
       // Clear success message after 3 seconds and call onSuccess if provided
       setTimeout(() => {
         setSuccess(null)
