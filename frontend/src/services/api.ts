@@ -8,12 +8,15 @@ export interface User {
   profileUrl: string | null
   createdAt: string
   updatedAt: string
+  twoFactorEnabled?: boolean
 }
 
 export interface LoginResponse {
   user: User
   token: string
   refreshToken?: string
+  requires2FA?: boolean
+  userId?: string
 }
 
 export interface SignupData {
@@ -88,7 +91,7 @@ class ApiService {
     retryOn401 = true
   ): Promise<T> {
     let token = this.getAuthToken()
-    
+
     // Check if token is expiring soon and refresh proactively
     if (token && this.isTokenExpiringSoon(token) && !this.isRefreshing) {
       try {
@@ -160,7 +163,7 @@ class ApiService {
       method: 'POST',
       body: JSON.stringify(data),
     })
-    
+
     if (response.token) {
       localStorage.setItem(this.ACCESS_TOKEN_KEY, response.token)
       localStorage.setItem('user', JSON.stringify(response.user))
@@ -168,7 +171,7 @@ class ApiService {
         localStorage.setItem(this.REFRESH_TOKEN_KEY, response.refreshToken)
       }
     }
-    
+
     return response
   }
 
@@ -177,7 +180,7 @@ class ApiService {
       method: 'POST',
       body: JSON.stringify(data),
     })
-    
+
     if (response.token) {
       localStorage.setItem(this.ACCESS_TOKEN_KEY, response.token)
       localStorage.setItem('user', JSON.stringify(response.user))
@@ -185,7 +188,7 @@ class ApiService {
         localStorage.setItem(this.REFRESH_TOKEN_KEY, response.refreshToken)
       }
     }
-    
+
     return response
   }
 
@@ -236,7 +239,7 @@ class ApiService {
         }
 
         const data = await response.json() as LoginResponse
-        
+
         if (data.token) {
           localStorage.setItem(this.ACCESS_TOKEN_KEY, data.token)
           if (data.user) {
@@ -246,7 +249,7 @@ class ApiService {
             localStorage.setItem(this.REFRESH_TOKEN_KEY, data.refreshToken)
           }
         }
-        
+
         return data
       } finally {
         this.isRefreshing = false
@@ -296,12 +299,12 @@ class ApiService {
       method: 'PUT',
       body: JSON.stringify(data),
     })
-    
+
     // Update stored user data
     if (response) {
       localStorage.setItem('user', JSON.stringify(response))
     }
-    
+
     return response
   }
 
@@ -320,6 +323,51 @@ class ApiService {
 
   async listUsers(): Promise<User[]> {
     return this.request<User[]>('/auth/users')
+  }
+
+  // 2FA Methods
+
+  async setup2FA(): Promise<{ secret: string; dataUrl: string }> {
+    return this.request<{ secret: string; dataUrl: string }>('/auth/2fa/setup', {
+      method: 'POST',
+    })
+  }
+
+  async enable2FA(token: string): Promise<string[]> {
+    return this.request<string[]>('/auth/2fa/enable', {
+      method: 'POST',
+      body: JSON.stringify({ token }),
+    })
+  }
+
+  async verify2FA(userId: string, token: string): Promise<LoginResponse> {
+    const response = await this.request<LoginResponse>('/auth/2fa/verify', {
+      method: 'POST',
+      body: JSON.stringify({ userId, token }),
+    })
+
+    if (response.token) {
+      localStorage.setItem(this.ACCESS_TOKEN_KEY, response.token)
+      localStorage.setItem('user', JSON.stringify(response.user))
+      if (response.refreshToken) {
+        localStorage.setItem(this.REFRESH_TOKEN_KEY, response.refreshToken)
+      }
+    }
+
+    return response
+  }
+
+  async disable2FA(password: string): Promise<void> {
+    return this.request<void>('/auth/2fa/disable', {
+      method: 'POST',
+      body: JSON.stringify({ password }),
+    })
+  }
+
+  async regenerateBackupCodes(): Promise<string[]> {
+    return this.request<string[]>('/auth/2fa/backup-codes', {
+      method: 'POST',
+    })
   }
 }
 
