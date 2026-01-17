@@ -1,0 +1,99 @@
+.settings-2fa-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1rem;
+    background: var(--card-background-color, #1e293b);
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-color, #334155);
+}
+
+.settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color, #334155);
+    padding-bottom: 1rem;
+}
+
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.status-badge.enabled {
+    background-color: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+}
+
+.status-badge.disabled {
+    background-color: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+}
+
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    padding: 1rem;
+}
+
+.modal-content {
+    background-color: var(--card-background-color, #1e293b);
+    padding: 2rem;
+    border-radius: 0.5rem;
+    max-width: 500px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.modal-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: none;
+    border: none;
+    color: var(--text-color-secondary, #94a3b8);
+    font-size: 1.5rem;
+    cursor: pointer;
+    line-height: 1;
+}
+
+.settings-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.danger-zone {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color, #334155);
+}
+
+.backup-codes-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 0.5rem;
+    margin: 1rem 0;
+}
+
+.backup-code-item {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 0.5rem;
+    text-align: center;
+    font-family: monospace;
+    border-radius: 0.25rem;
+}
