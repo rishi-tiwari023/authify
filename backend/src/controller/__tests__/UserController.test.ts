@@ -3,7 +3,7 @@ import { UserController } from '../UserController';
 import { UserService } from '../../service/UserService';
 import { ActivityLogService } from '../../service/ActivityLogService';
 import { AuthRequest } from '../../middleware/authMiddleware';
-import { ValidationError } from '../../utils/errors';
+import { ValidationError, UnauthorizedError } from '../../utils/errors';
 import { UserRole } from '../../model/User';
 
 // Mock dependencies
@@ -162,7 +162,7 @@ describe('UserController', () => {
 
     it('returns 401 when current password is incorrect', async () => {
       mockRequest.body = { currentPassword: 'WrongPass1!', newPassword: 'NewPass1!' };
-      userServiceMock.changePassword.mockRejectedValueOnce(new ValidationError('Current password is incorrect'));
+      userServiceMock.changePassword.mockRejectedValueOnce(new UnauthorizedError('Current password is incorrect'));
 
       await controller.changePassword(mockRequest as AuthRequest, mockResponse as Response);
 

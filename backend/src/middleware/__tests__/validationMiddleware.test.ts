@@ -87,10 +87,10 @@ describe('validateBody', () => {
 
   it('transforms and validates data according to schema', () => {
     const schema = z.object({
-      email: z.string().email().toLowerCase().trim(),
+      email: z.string().trim().email().toLowerCase(),
       age: z.number().int().positive(),
     });
-    mockRequest.body = { email: '  TEST@EXAMPLE.COM  ', age: '25' };
+    mockRequest.body = { email: '  TEST@EXAMPLE.COM  ', age: 25 };
     const middleware = validateBody(schema);
 
     middleware(mockRequest as Request, mockResponse as Response, nextMock);

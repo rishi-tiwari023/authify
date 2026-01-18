@@ -17,6 +17,10 @@ interface RateLimitOptions {
 
 const store: RateLimitStore = {};
 
+export const resetRateLimitStore = () => {
+  for (const key in store) delete store[key];
+};
+
 /**
  * Simple in-memory rate limiting middleware with configurable keying
  */

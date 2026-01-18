@@ -4,7 +4,8 @@ Full-stack authentication demo showcasing signup, signin, and protected dashboar
 
 ## Features
 
-- 🔐 User authentication (signup, login, JWT tokens)
+- �️ Two-Factor Authentication (2FA) with TOTP
+- �🔐 User authentication (signup, login, JWT tokens)
 - 🔑 Password reset functionality
 - 👤 User profile management
 - 🛡️ Role-based access control (Admin/User)

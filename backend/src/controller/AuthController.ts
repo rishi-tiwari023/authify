@@ -136,7 +136,7 @@ export class AuthController {
 
       safeLogActivity(this.activityLogService, { userId: user.id, action: 'login', req });
 
-      res.json({
+      res.status(200).json({
         user: user.toSafeJSON(),
         token,
         refreshToken,

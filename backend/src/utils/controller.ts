@@ -1,4 +1,5 @@
 import { Response } from 'express';
+import { JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken';
 import { AppError } from './errors';
 
 /**
@@ -12,6 +13,11 @@ export function handleControllerError(
 ): void {
   if (error instanceof AppError) {
     res.status(error.statusCode).json({ error: error.message });
+    return;
+  }
+
+  if (error instanceof JsonWebTokenError || error instanceof TokenExpiredError) {
+    res.status(401).json({ error: 'Invalid or expired token' });
     return;
   }
 

@@ -225,7 +225,7 @@ describe('AuthController', () => {
 
       await controller.refreshToken(mockRequest as Request, mockResponse as Response);
 
-      expect(statusMock).toHaveBeenCalledWith(500);
+      expect(statusMock).toHaveBeenCalledWith(401);
     });
 
     it('returns new tokens on valid refresh token', async () => {

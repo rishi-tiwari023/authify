@@ -33,6 +33,22 @@ const emailServiceMock = {
 
 const activityLogMock = jest.fn().mockResolvedValue(undefined);
 
+// Mock TwoFactorService to avoid crypto dependencies
+jest.mock('../../service/TwoFactorService', () => {
+  return {
+    TwoFactorService: jest.fn().mockImplementation(() => ({
+      generateSecret: jest.fn().mockReturnValue({ base32: 'SECRET', otpauth_url: 'otpauth://...' }),
+      generateQRCode: jest.fn().mockResolvedValue('data:image/png;base64,mockqr'),
+      encryptSecret: jest.fn().mockReturnValue('encrypted-secret'),
+      decryptSecret: jest.fn().mockReturnValue('decrypted-secret'),
+      verifyToken: jest.fn().mockReturnValue(true),
+      generateBackupCodes: jest.fn().mockReturnValue(['backup1', 'backup2']),
+      verifyBackupCode: jest.fn().mockReturnValue(true),
+      removeBackupCode: jest.fn().mockReturnValue([]),
+    })),
+  };
+});
+
 // Replace repositories and services with in-memory implementations
 jest.mock('../../repository/UserRepository', () => {
   return {
@@ -60,6 +76,7 @@ jest.mock('../../repository/UserRepository', () => {
           password: data.password,
           role: data.role ?? UserRole.USER,
           emailVerified: data.emailVerified ?? false,
+          twoFactorEnabled: false,
           profileUrl: data.profileUrl ?? null,
           createdAt: data.createdAt ?? new Date(),
           updatedAt: data.updatedAt ?? new Date(),
@@ -71,6 +88,7 @@ jest.mock('../../repository/UserRepository', () => {
               role: this.role,
               profileUrl: this.profileUrl,
               emailVerified: this.emailVerified,
+              twoFactorEnabled: this.twoFactorEnabled,
               createdAt: this.createdAt,
               updatedAt: this.updatedAt,
             };
@@ -251,6 +269,7 @@ describe('Integration: Admin Endpoints', () => {
     jest.clearAllMocks();
     process.env.JWT_SECRET = 'test-secret';
     process.env.REFRESH_TOKEN_SECRET = 'test-refresh-secret';
+    process.env.TWO_FACTOR_ENCRYPTION_KEY = 'test-encryption-key-must-be-32-b';
     authController = new AuthController();
   });
 

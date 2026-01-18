@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { rateLimitMiddleware } from '../rateLimitMiddleware';
+import { rateLimitMiddleware, resetRateLimitStore } from '../rateLimitMiddleware';
 
 describe('rateLimitMiddleware', () => {
   let mockRequest: Partial<Request>;
@@ -10,6 +10,7 @@ describe('rateLimitMiddleware', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    resetRateLimitStore();
     jest.useFakeTimers();
 
     jsonMock = jest.fn().mockReturnThis();

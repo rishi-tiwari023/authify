@@ -4,6 +4,7 @@ A secure authentication backend API built with Node.js, Express, TypeScript, and
 
 ## Features
 
+- 🛡️ Two-Factor Authentication (2FA) with TOTP
 - 🔐 User authentication (signup, login, JWT tokens)
 - 🔑 Password reset functionality
 - 👤 User profile management
@@ -69,6 +70,11 @@ npm start
 - `POST /api/auth/forgot-password` - Request password reset
 - `POST /api/auth/reset-password` - Reset password with token
 - `GET /api/auth/users` - List all users (Admin only)
+- `POST /api/auth/2fa/setup` - Initiate 2FA setup
+- `POST /api/auth/2fa/enable` - Verify and enable 2FA
+- `POST /api/auth/2fa/verify` - Verify 2FA during login
+- `POST /api/auth/2fa/disable` - Disable 2FA
+- `POST /api/auth/2fa/backup-codes` - Regenerate backup codes
 
 ### User Management
 

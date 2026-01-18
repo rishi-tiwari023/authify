@@ -34,6 +34,28 @@ const emailServiceMock = {
 
 const activityLogMock = jest.fn().mockResolvedValue(undefined);
 
+// Mock TwoFactorService to avoid crypto dependencies
+jest.mock('../../service/TwoFactorService', () => {
+  return {
+    TwoFactorService: jest.fn().mockImplementation(() => ({
+      generateSecret: jest.fn().mockReturnValue({ base32: 'SECRET', otpauth_url: 'otpauth://...' }),
+      generateQRCode: jest.fn().mockResolvedValue('data:image/png;base64,mockqr'),
+      encryptSecret: jest.fn().mockReturnValue('encrypted-secret'),
+      decryptSecret: jest.fn().mockReturnValue('decrypted-secret'),
+      verifyToken: jest.fn().mockReturnValue(true),
+      generateBackupCodes: jest.fn().mockReturnValue(['backup1', 'backup2']),
+      verifyBackupCode: jest.fn().mockReturnValue(true),
+      removeBackupCode: jest.fn().mockReturnValue([]),
+    })),
+  };
+});
+
+// Mock jsonwebtoken to avoid crypto dependency issues
+jest.mock('jsonwebtoken', () => ({
+  sign: jest.fn().mockReturnValue('mock-jwt-token'),
+  verify: jest.fn().mockReturnValue({ id: 'user-1', role: 'USER', email: 'test@example.com' }),
+}));
+
 // Replace repositories and services with in-memory implementations
 jest.mock('../../repository/UserRepository', () => {
   return {
@@ -61,6 +83,7 @@ jest.mock('../../repository/UserRepository', () => {
           password: data.password,
           role: data.role ?? UserRole.USER,
           emailVerified: data.emailVerified ?? false,
+          twoFactorEnabled: false,
           profileUrl: data.profileUrl ?? null,
           createdAt: data.createdAt ?? new Date(),
           updatedAt: data.updatedAt ?? new Date(),
@@ -72,6 +95,7 @@ jest.mock('../../repository/UserRepository', () => {
               role: this.role,
               profileUrl: this.profileUrl,
               emailVerified: this.emailVerified,
+              twoFactorEnabled: this.twoFactorEnabled,
               createdAt: this.createdAt,
               updatedAt: this.updatedAt,
             };
@@ -224,6 +248,7 @@ describe('Integration: Profile Management', () => {
     jest.clearAllMocks();
     process.env.JWT_SECRET = 'test-secret';
     process.env.REFRESH_TOKEN_SECRET = 'test-refresh-secret';
+    process.env.TWO_FACTOR_ENCRYPTION_KEY = 'test-encryption-key-must-be-32-b';
     authController = new AuthController();
     userController = new UserController();
   });
@@ -336,6 +361,7 @@ describe('Integration: Profile Management', () => {
     const signupPayload = signupRes.json.mock.calls[0][0];
     const userId = signupPayload.user.id;
     const userBeforeChange = users.find((u) => u.id === userId);
+    const oldPassword = userBeforeChange?.password;
 
     // Change password
     const changePasswordRes = createMockResponse();
@@ -356,7 +382,7 @@ describe('Integration: Profile Management', () => {
     expect(changePasswordRes.json).toHaveBeenCalledWith({ message: 'Password changed successfully' });
     const userAfterChange = users.find((u) => u.id === userId);
     expect(userAfterChange?.password).toBe('hashed-NewPassword1!');
-    expect(userAfterChange?.password).not.toBe(userBeforeChange?.password);
+    expect(userAfterChange?.password).not.toBe(oldPassword);
   });
 
   it('rejects password change when current password is incorrect', async () => {

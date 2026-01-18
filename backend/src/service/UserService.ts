@@ -2,7 +2,7 @@ import { UserRepository } from '../repository/UserRepository';
 import { SafeUser, User } from '../model/User';
 import * as bcrypt from 'bcrypt';
 import { NotFoundError, ValidationError, UnauthorizedError } from '../utils/errors';
-import { isValidEmail, validateName, isValidUrl } from '../utils/validation';
+import { isValidEmail, validateName, isValidUrl, isValidPassword } from '../utils/validation';
 import { PasswordResetTokenRepository } from '../repository/PasswordResetTokenRepository';
 
 export interface UpdateProfileData {
@@ -43,7 +43,7 @@ export class UserService {
       if (!isValidEmail(data.email)) {
         throw new ValidationError('Invalid email format');
       }
-      
+
       const existingUser = await this.userRepository.findByEmail(data.email);
       if (existingUser && existingUser.id !== userId) {
         throw new ValidationError('Email already in use');
@@ -89,6 +89,12 @@ export class UserService {
     const isCurrentPasswordValid = await bcrypt.compare(data.currentPassword, user.password);
     if (!isCurrentPasswordValid) {
       throw new UnauthorizedError('Current password is incorrect');
+    }
+
+    // Validate new password
+    const passwordValidation = isValidPassword(data.newPassword);
+    if (!passwordValidation.valid) {
+      throw new ValidationError(passwordValidation.error!);
     }
 
     // Hash new password
