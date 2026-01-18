@@ -12,7 +12,7 @@ interface UpdateProfilePayload {
 interface AuthContextType {
   user: User | null
   loading: boolean
-  login: (email: string, password: string) => Promise<boolean> // Returns true if 2FA needed
+  login: (email: string, password: string) => Promise<{ requires2FA: boolean; userId?: string }>
   verify2FA: (userId: string, token: string) => Promise<void>
   signup: (name: string, email: string, password: string) => Promise<void>
   logout: () => Promise<void>
@@ -74,13 +74,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const login = async (email: string, password: string): Promise<boolean> => {
+  const login = async (email: string, password: string): Promise<{ requires2FA: boolean; userId?: string }> => {
     const response = await apiService.login({ email, password })
     if (response.requires2FA && response.userId) {
-      return true
+      return { requires2FA: true, userId: response.userId }
     }
     setUser(response.user)
-    return false
+    return { requires2FA: false }
   }
 
   const verify2FA = async (userId: string, token: string) => {

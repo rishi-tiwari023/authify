@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { getErrorMessage } from '../utils/errorMessages'
 import EmailValidationFeedback from './EmailValidationFeedback'
+import TwoFactorVerify from './TwoFactorVerify'
 import './Login.css'
 
 export default function Login() {
@@ -12,6 +13,8 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [emailTouched, setEmailTouched] = useState(false)
+  const [show2FA, setShow2FA] = useState(false)
+  const [userIdFor2FA, setUserIdFor2FA] = useState<string>('')
   const { login } = useAuth()
   const navigate = useNavigate()
 
@@ -38,13 +41,32 @@ export default function Login() {
 
     setLoading(true)
     try {
-      await login(email, password)
-      navigate('/dashboard')
+      const result = await login(email, password)
+      if (result.requires2FA && result.userId) {
+        setUserIdFor2FA(result.userId)
+        setShow2FA(true)
+      } else {
+        navigate('/dashboard')
+      }
     } catch (err) {
       setError(getErrorMessage(err))
     } finally {
       setLoading(false)
     }
+  }
+
+  if (show2FA) {
+    return (
+      <div className="auth-container">
+        <div className="auth-card">
+          <TwoFactorVerify
+            userId={userIdFor2FA}
+            onSuccess={() => navigate('/dashboard')}
+            onCancel={() => setShow2FA(false)}
+          />
+        </div>
+      </div>
+    )
   }
 
   return (
