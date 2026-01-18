@@ -88,7 +88,8 @@ class ApiService {
   private async request<T>(
     endpoint: string,
     options: RequestInit = {},
-    retryOn401 = true
+    retryOn401 = true,
+    retries = 3
   ): Promise<T> {
     let token = this.getAuthToken()
 
@@ -118,6 +119,13 @@ class ApiService {
         headers,
       })
     } catch (fetchError) {
+      if (retries > 0) {
+        // Wait for a bit before retrying (exponential backoff: 500ms, 1000ms, 2000ms)
+        const delay = 500 * Math.pow(2, 3 - retries)
+        await new Promise(resolve => setTimeout(resolve, delay))
+        return this.request<T>(endpoint, options, retryOn401, retries - 1)
+      }
+
       // Handle network errors (no connection, timeout, etc.)
       if (fetchError instanceof TypeError && fetchError.message.includes('fetch')) {
         throw new Error('Network error. Please check your internet connection and try again.')
@@ -148,6 +156,13 @@ class ApiService {
         this.logout()
         throw new Error('Session expired. Please log in again.')
       }
+    }
+
+    if (response.status >= 500 && retries > 0 && options.method === 'GET') {
+      // Retry 5xx errors for GET requests safety
+      const delay = 500 * Math.pow(2, 3 - retries)
+      await new Promise(resolve => setTimeout(resolve, delay))
+      return this.request<T>(endpoint, options, retryOn401, retries - 1)
     }
 
     if (!response.ok) {
