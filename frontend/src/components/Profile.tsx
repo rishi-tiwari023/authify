@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { apiService } from '../services/api'
 import { getErrorMessage } from '../utils/errorMessages'
 import ChangePassword from './ChangePassword'
+import TwoFactorSettings from './TwoFactorSettings'
 import Loading from './Loading'
 import './Login.css'
 
@@ -79,16 +80,16 @@ export default function Profile() {
         email: email.trim(),
         profileUrl: profileUrl.trim() || null,
       })
-      
+
       setSuccess('Profile updated successfully!')
-      
+
       // Update auth context user
       if (authUser) {
         authUser.name = updatedUser.name
         authUser.email = updatedUser.email
         authUser.profileUrl = updatedUser.profileUrl
       }
-      
+
       // Clear success message after 3 seconds
       setTimeout(() => setSuccess(null), 3000)
     } catch (err) {
@@ -259,6 +260,8 @@ export default function Profile() {
           onCancel={() => setShowChangePassword(false)}
         />
       )}
+
+      <TwoFactorSettings />
 
       <div className="auth-card" style={{ marginTop: '2rem', borderColor: 'rgba(239, 68, 68, 0.3)' }}>
         <h3 style={{ color: '#ef4444', marginBottom: '0.5rem' }}>Danger Zone</h3>
