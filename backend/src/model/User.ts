@@ -13,6 +13,7 @@ export interface SafeUser {
   profileUrl: string | null;
   emailVerified: boolean;
   twoFactorEnabled: boolean;
+  isBanned: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -92,6 +93,7 @@ export class User {
       profileUrl: this.profileUrl,
       emailVerified: this.emailVerified,
       twoFactorEnabled: this.twoFactorEnabled,
+      isBanned: this.isBanned,
       createdAt: this.createdAt,
       updatedAt: this.updatedAt,
     };

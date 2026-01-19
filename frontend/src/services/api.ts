@@ -9,6 +9,7 @@ export interface User {
   createdAt: string
   updatedAt: string
   twoFactorEnabled?: boolean
+  isBanned?: boolean
 }
 
 export interface LoginResponse {
@@ -17,6 +18,14 @@ export interface LoginResponse {
   refreshToken?: string
   requires2FA?: boolean
   userId?: string
+}
+
+export interface PaginatedResponse<T> {
+  data: T[]
+  total: number
+  page: number
+  limit: number
+  totalPages: number
 }
 
 export interface SignupData {
@@ -336,8 +345,15 @@ class ApiService {
     })
   }
 
-  async listUsers(): Promise<User[]> {
-    return this.request<User[]>('/auth/users')
+  async listUsers(): Promise<PaginatedResponse<User>> {
+    return this.request<PaginatedResponse<User>>('/auth/users')
+  }
+
+  async banUser(userId: string, isBanned: boolean): Promise<{ message: string; user: User }> {
+    return this.request<{ message: string; user: User }>(`/admin/users/${userId}/ban`, {
+      method: 'PATCH',
+      body: JSON.stringify({ isBanned }),
+    })
   }
 
   // 2FA Methods
