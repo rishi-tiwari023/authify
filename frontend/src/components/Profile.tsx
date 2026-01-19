@@ -1,17 +1,14 @@
 import { useState, useEffect } from 'react'
 import type { FormEvent } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { apiService } from '../services/api'
 import { getErrorMessage } from '../utils/errorMessages'
-import ChangePassword from './ChangePassword'
-import TwoFactorSettings from './TwoFactorSettings'
 import Loading from './Loading'
 import './Login.css'
 
 export default function Profile() {
-  const { user: authUser, logout } = useAuth()
-  const navigate = useNavigate()
+  const { user: authUser } = useAuth()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [profileUrl, setProfileUrl] = useState('')
@@ -19,10 +16,6 @@ export default function Profile() {
   const [success, setSuccess] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
-  const [showChangePassword, setShowChangePassword] = useState(false)
-  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false)
-  const [deleting, setDeleting] = useState(false)
-  const [deleteError, setDeleteError] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -99,273 +92,237 @@ export default function Profile() {
     }
   }
 
-  const handleDeleteAccount = async () => {
-    setDeleteError(null)
-    setDeleting(true)
-    try {
-      await apiService.deleteAccount()
-      await logout()
-      navigate('/')
-    } catch (err) {
-      setDeleteError(getErrorMessage(err))
-      setDeleting(false)
-    }
-  }
-
   if (fetching) {
     return <Loading message="Loading profile..." />
   }
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <h2>Profile Settings</h2>
-        <p className="auth-subtitle">Manage your account information</p>
+    <div className="auth-container" style={{ minHeight: '100vh', height: 'auto', padding: '4rem 1rem', alignItems: 'flex-start' }}>
+      <div style={{ width: '100%', maxWidth: '480px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+        <div className="auth-card" style={{ margin: 0, width: '100%', maxWidth: 'none' }}>
+          <h2>Profile Settings</h2>
+          <p className="auth-subtitle">Manage your account information</p>
 
-        {authUser && (
-          <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '0.75rem' }}>
-            <p style={{ margin: '0.25rem 0', color: '#cbd5f5' }}>
-              <strong style={{ color: '#e2e8f0' }}>Role:</strong> {authUser.role}
-            </p>
-            <p style={{ margin: '0.25rem 0', color: '#cbd5f5' }}>
-              <strong style={{ color: '#e2e8f0' }}>Member since:</strong>{' '}
-              {new Date(authUser.createdAt).toLocaleDateString()}
-            </p>
-            {authUser.profileUrl && (
-              <div style={{ marginTop: '1rem' }}>
-                <img
-                  src={authUser.profileUrl}
-                  alt="Profile"
-                  style={{
-                    width: '80px',
-                    height: '80px',
-                    borderRadius: '50%',
-                    objectFit: 'cover',
-                  }}
-                />
+          {authUser && (
+            <div style={{ marginBottom: '1.5rem', padding: '1rem', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '0.75rem' }}>
+              <p style={{ margin: '0.25rem 0', color: '#cbd5f5' }}>
+                <strong style={{ color: '#e2e8f0' }}>Role:</strong> {authUser.role}
+              </p>
+              <p style={{ margin: '0.25rem 0', color: '#cbd5f5' }}>
+                <strong style={{ color: '#e2e8f0' }}>Member since:</strong>{' '}
+                {new Date(authUser.createdAt).toLocaleDateString()}
+              </p>
+              {authUser.profileUrl && (
+                <div style={{ marginTop: '1rem' }}>
+                  <img
+                    src={authUser.profileUrl}
+                    alt="Profile"
+                    style={{
+                      width: '80px',
+                      height: '80px',
+                      borderRadius: '50%',
+                      objectFit: 'cover',
+                      border: '2px solid rgba(99, 102, 241, 0.3)',
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="auth-form">
+            {error && (
+              <div className="error-message" role="alert">
+                {error}
               </div>
             )}
-          </div>
-        )}
 
-        <form onSubmit={handleSubmit} className="auth-form">
-          {error && (
-            <div className="error-message" role="alert">
-              {error}
-            </div>
-          )}
-
-          {success && (
-            <div
-              style={{
-                padding: '0.75rem 1rem',
-                borderRadius: '0.75rem',
-                background: 'rgba(34, 197, 94, 0.15)',
-                border: '1px solid rgba(34, 197, 94, 0.3)',
-                color: '#86efac',
-                fontSize: '0.9rem',
-              }}
-              role="alert"
-            >
-              {success}
-            </div>
-          )}
-
-          <div className="form-group">
-            <label htmlFor="name">Name</label>
-            <input
-              id="name"
-              type="text"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="Your full name"
-              disabled={loading}
-              required
-              minLength={2}
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="email">Email</label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="you@example.com"
-              disabled={loading}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="profileUrl">Profile Picture URL</label>
-            <input
-              id="profileUrl"
-              type="url"
-              value={profileUrl}
-              onChange={(event) => setProfileUrl(event.target.value)}
-              placeholder="https://example.com/photo.jpg"
-              disabled={loading}
-            />
-          </div>
-
-          <button type="submit" className="auth-button" disabled={loading}>
-            {loading ? 'Updating…' : 'Update Profile'}
-          </button>
-        </form>
-
-        <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-          <button
-            type="button"
-            onClick={() => setShowChangePassword(!showChangePassword)}
-            style={{
-              padding: '0.75rem 1.5rem',
-              borderRadius: '0.5rem',
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid rgba(148, 163, 184, 0.2)',
-              color: '#a5b4fc',
-              fontSize: '0.9rem',
-              cursor: 'pointer',
-              transition: 'all 200ms ease',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'
-              e.currentTarget.style.borderColor = '#6366f1'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'
-              e.currentTarget.style.borderColor = 'rgba(148, 163, 184, 0.2)'
-            }}
-          >
-            {showChangePassword ? 'Hide Change Password' : 'Change Password'}
-          </button>
-          <Link
-            to="/dashboard"
-            style={{
-              color: '#a5b4fc',
-              textDecoration: 'none',
-              fontSize: '0.9rem',
-              padding: '0.75rem 1.5rem',
-            }}
-          >
-            Back to Dashboard
-          </Link>
-        </div>
-      </div>
-
-      {showChangePassword && (
-        <ChangePassword
-          onSuccess={() => setShowChangePassword(false)}
-          onCancel={() => setShowChangePassword(false)}
-        />
-      )}
-
-      <TwoFactorSettings />
-
-      <div className="auth-card" style={{ marginTop: '2rem', borderColor: 'rgba(239, 68, 68, 0.3)' }}>
-        <h3 style={{ color: '#ef4444', marginBottom: '0.5rem' }}>Danger Zone</h3>
-        <p className="auth-subtitle" style={{ color: '#fca5a5', marginBottom: '1.5rem' }}>
-          Permanently delete your account and all associated data
-        </p>
-
-        {deleteError && (
-          <div className="error-message" role="alert" style={{ marginBottom: '1rem' }}>
-            {deleteError}
-          </div>
-        )}
-
-        {!showDeleteConfirmation ? (
-          <button
-            type="button"
-            onClick={() => setShowDeleteConfirmation(true)}
-            disabled={deleting}
-            style={{
-              padding: '0.75rem 1.5rem',
-              borderRadius: '0.5rem',
-              border: '1px solid rgba(239, 68, 68, 0.5)',
-              background: 'rgba(239, 68, 68, 0.1)',
-              color: '#fca5a5',
-              fontSize: '0.9rem',
-              cursor: 'pointer',
-              transition: 'all 200ms ease',
-            }}
-            onMouseEnter={(e) => {
-              if (!deleting) {
-                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'
-                e.currentTarget.style.borderColor = '#ef4444'
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!deleting) {
-                e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'
-                e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.5)'
-              }
-            }}
-          >
-            Delete Account
-          </button>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div
-              style={{
-                padding: '1rem',
-                borderRadius: '0.75rem',
-                background: 'rgba(239, 68, 68, 0.1)',
-                border: '1px solid rgba(239, 68, 68, 0.3)',
-              }}
-            >
-              <p style={{ color: '#fca5a5', margin: '0 0 0.5rem 0', fontWeight: '500' }}>
-                Are you sure you want to delete your account?
-              </p>
-              <p style={{ color: '#fca5a5', margin: 0, fontSize: '0.9rem' }}>
-                This action cannot be undone. All your data will be permanently deleted.
-              </p>
-            </div>
-            <div style={{ display: 'flex', gap: '1rem' }}>
-              <button
-                type="button"
-                onClick={handleDeleteAccount}
-                disabled={deleting}
+            {success && (
+              <div
                 style={{
-                  padding: '0.75rem 1.5rem',
-                  borderRadius: '0.5rem',
-                  border: 'none',
-                  background: '#ef4444',
-                  color: '#fff',
+                  padding: '0.75rem 1rem',
+                  borderRadius: '0.75rem',
+                  background: 'rgba(34, 197, 94, 0.15)',
+                  border: '1px solid rgba(34, 197, 94, 0.3)',
+                  color: '#86efac',
                   fontSize: '0.9rem',
-                  cursor: deleting ? 'not-allowed' : 'pointer',
-                  opacity: deleting ? 0.6 : 1,
-                  transition: 'all 200ms ease',
                 }}
+                role="alert"
               >
-                {deleting ? 'Deleting…' : 'Yes, Delete My Account'}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowDeleteConfirmation(false)
-                  setDeleteError(null)
-                }}
-                disabled={deleting}
+                {success}
+              </div>
+            )}
+
+            <div className="form-group">
+              <label htmlFor="name">Name</label>
+              <input
+                id="name"
+                type="text"
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                placeholder="Your full name"
+                disabled={loading}
+                required
+                minLength={2}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="email">Email</label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="you@example.com"
+                disabled={loading}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="profileUrl">Profile Picture URL</label>
+              <input
+                id="profileUrl"
+                type="url"
+                value={profileUrl}
+                onChange={(event) => setProfileUrl(event.target.value)}
+                placeholder="https://example.com/photo.jpg"
+                disabled={loading}
+              />
+            </div>
+
+            <button type="submit" className="auth-button" disabled={loading}>
+              {loading ? 'Updating…' : 'Update Profile'}
+            </button>
+          </form>
+
+          <div style={{ marginTop: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <h3 style={{ color: '#e2e8f0', fontSize: '1.25rem', marginBottom: '0.5rem' }}>Account Actions</h3>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+              <Link
+                to="/change-password"
+                className="action-card"
                 style={{
-                  padding: '0.75rem 1.5rem',
-                  borderRadius: '0.5rem',
-                  border: '1px solid rgba(148, 163, 184, 0.2)',
+                  padding: '1.25rem',
                   background: 'rgba(255, 255, 255, 0.05)',
-                  color: '#a5b4fc',
-                  fontSize: '0.9rem',
-                  cursor: deleting ? 'not-allowed' : 'pointer',
-                  opacity: deleting ? 0.6 : 1,
+                  border: '1px solid rgba(148, 163, 184, 0.1)',
+                  borderRadius: '1rem',
+                  color: '#e2e8f0',
+                  textDecoration: 'none',
+                  transition: 'all 200ms ease',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.5rem'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'
+                  e.currentTarget.style.borderColor = '#6366f1'
+                  e.currentTarget.style.transform = 'translateY(-2px)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'
+                  e.currentTarget.style.borderColor = 'rgba(148, 163, 184, 0.1)'
+                  e.currentTarget.style.transform = 'translateY(0)'
                 }}
               >
-                Cancel
-              </button>
+                <span style={{ fontSize: '1.5rem' }}>🔐</span>
+                <strong style={{ fontSize: '1rem' }}>Change Password</strong>
+                <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Update your secret credentials</span>
+              </Link>
+
+              <Link
+                to="/two-factor"
+                className="action-card"
+                style={{
+                  padding: '1.25rem',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(148, 163, 184, 0.1)',
+                  borderRadius: '1rem',
+                  color: '#e2e8f0',
+                  textDecoration: 'none',
+                  transition: 'all 200ms ease',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.5rem'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.08)'
+                  e.currentTarget.style.borderColor = '#6366f1'
+                  e.currentTarget.style.transform = 'translateY(-2px)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'
+                  e.currentTarget.style.borderColor = 'rgba(148, 163, 184, 0.1)'
+                  e.currentTarget.style.transform = 'translateY(0)'
+                }}
+              >
+                <span style={{ fontSize: '1.5rem' }}>🛡️</span>
+                <strong style={{ fontSize: '1rem' }}>Two-Factor Auth</strong>
+                <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Add an extra layer of security</span>
+              </Link>
+
+              <Link
+                to="/delete"
+                className="action-card"
+                style={{
+                  padding: '1.25rem',
+                  background: 'rgba(239, 68, 68, 0.05)',
+                  border: '1px solid rgba(239, 68, 68, 0.15)',
+                  borderRadius: '1rem',
+                  color: '#fca5a5',
+                  textDecoration: 'none',
+                  transition: 'all 200ms ease',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.5rem'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(239, 68, 68, 0.08)'
+                  e.currentTarget.style.borderColor = '#ef4444'
+                  e.currentTarget.style.transform = 'translateY(-2px)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(239, 68, 68, 0.05)'
+                  e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.15)'
+                  e.currentTarget.style.transform = 'translateY(0)'
+                }}
+              >
+                <span style={{ fontSize: '1.5rem' }}>⚠️</span>
+                <strong style={{ fontSize: '1rem' }}>Delete Account</strong>
+                <span style={{ fontSize: '0.85rem', color: '#fca5a5', opacity: 0.8 }}>Permanently remove all data</span>
+              </Link>
+            </div>
+
+            <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+              <Link
+                to="/dashboard"
+                style={{
+                  color: '#cbd5f5',
+                  textDecoration: 'none',
+                  fontSize: '0.9rem',
+                  padding: '0.75rem 1.5rem',
+                  borderRadius: '0.5rem',
+                  border: '1px solid rgba(148, 163, 184, 0.1)',
+                  transition: 'all 200ms ease',
+                  display: 'inline-block'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'
+                  e.currentTarget.style.borderColor = 'rgba(148, 163, 184, 0.3)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent'
+                  e.currentTarget.style.borderColor = 'rgba(148, 163, 184, 0.1)'
+                }}
+              >
+                Back to Dashboard
+              </Link>
             </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   )
 }
-

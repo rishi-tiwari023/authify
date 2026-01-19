@@ -68,28 +68,7 @@ export default function Dashboard() {
                   e.currentTarget.style.color = '#cbd5f5'
                 }}
               >
-                Profile
-              </Link>
-              <Link
-                to="/profile"
-                style={{
-                  padding: '0.5rem 1rem',
-                  color: '#cbd5f5',
-                  textDecoration: 'none',
-                  fontSize: '0.9rem',
-                  borderRadius: '0.5rem',
-                  transition: 'all 200ms ease',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'
-                  e.currentTarget.style.color = '#e2e8f0'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.background = 'transparent'
-                  e.currentTarget.style.color = '#cbd5f5'
-                }}
-              >
-                Settings
+                Profile & Settings
               </Link>
               {user.role === 'ADMIN' && (
                 <Link

@@ -11,6 +11,9 @@ import ForgotPassword from './components/ForgotPassword'
 import ResetPassword from './components/ResetPassword'
 import VerifyEmail from './components/VerifyEmail'
 import Profile from './components/Profile'
+import DeleteAccount from './components/DeleteAccount'
+import TwoFactorSettings from './components/TwoFactorSettings'
+import ChangePassword from './components/ChangePassword'
 import AdminDashboard from './components/AdminDashboard'
 import { useAuth } from './contexts/AuthContext'
 
@@ -70,6 +73,9 @@ function App() {
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/change-password" element={<ChangePassword onCancel={() => window.history.back()} />} />
+        <Route path="/two-factor" element={<TwoFactorSettings />} />
+        <Route path="/delete" element={<DeleteAccount />} />
       </Route>
       <Route element={<AdminRoute />}>
         <Route path="/admin" element={<AdminDashboard />} />
