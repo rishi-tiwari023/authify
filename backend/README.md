@@ -40,7 +40,8 @@ cp env.example .env   # or copy env.example .env on Windows
 
 Key variables:
 - Database: `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME`
-- JWT: `JWT_SECRET`
+- JWT: `JWT_SECRET`, `JWT_EXPIRATION`, `REFRESH_TOKEN_SECRET`, `REFRESH_TOKEN_EXPIRATION`
+- Security: `CORS_ORIGIN`, `TWO_FACTOR_ENCRYPTION_KEY`
 - Email: `EMAIL_FROM`, `EMAIL_FROM_NAME`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `FRONTEND_URL`
 - Server: `PORT`, `NODE_ENV`, `APP_VERSION`
 
@@ -49,14 +50,18 @@ Key variables:
 CREATE DATABASE authify;
 ```
 
-5. Run the application:
-```bash
-# Development mode
+# Run the application
 npm run dev
 
-# Production mode
-npm run build
-npm start
+# --- DATABASE MIGRATIONS ---
+# Run migrations (ensure database exists)
+npm run migration:run
+
+# Revert last migration
+npm run migration:revert
+
+# Generate new migration based on schema changes
+npm run migration:generate -- src/migrations/MigrationName
 ```
 
 ## API Endpoints

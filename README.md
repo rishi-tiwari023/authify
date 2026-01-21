@@ -143,7 +143,16 @@ DB_NAME=authify            # Database name
 
 #### JWT Configuration
 ```env
-JWT_SECRET=change-me-in-production  # Secret key for JWT token signing (use a strong random string in production)
+JWT_SECRET=your-secret-key           # Primary secret for JWT access tokens
+JWT_EXPIRATION=15m                   # Access token lifespan (e.g., 15m, 1h)
+REFRESH_TOKEN_SECRET=your-refresh-key # Secret for refresh token signing
+REFRESH_TOKEN_EXPIRATION=7d          # Refresh token lifespan (e.g., 7d, 30d)
+```
+
+#### Security & CORS Configuration
+```env
+CORS_ORIGIN=http://localhost:5173    # Comma-separated list of allowed origins
+TWO_FACTOR_ENCRYPTION_KEY=your-key    # 32-byte key for encrypting 2FA secrets
 ```
 
 #### Email/SMTP Configuration
@@ -196,15 +205,18 @@ VITE_API_URL=http://localhost:3000/api  # Backend API URL (defaults to http://lo
    \q
    ```
 
-### Database Migration
+The application uses TypeORM for database management. While `synchronize: true` is enabled in development for quick prototyping, production environments use a migration-based workflow.
 
-The application uses TypeORM, which automatically creates the database schema when the application starts. The first time you run the backend, it will:
+**Running Migrations:**
+```bash
+cd backend
+npm run migration:run
+```
 
-1. Connect to the database
-2. Create all required tables (User, EmailVerificationToken, PasswordResetToken, ActivityLog)
-3. Set up relationships and indexes
-
-**Note:** In production, you should use proper migration tools instead of automatic synchronization.
+**Reverting Migrations:**
+```bash
+npm run migration:revert
+```
 
 ### Database Connection Troubleshooting
 
