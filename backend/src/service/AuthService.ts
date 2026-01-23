@@ -38,6 +38,11 @@ export class AuthService {
     this.twoFactorService = new TwoFactorService();
   }
 
+  /**
+   * Registers a new user.
+   * @param data Signup details (name, email, password)
+   * @returns The created User object
+   */
   async signup(data: SignupData): Promise<User> {
     // Validate email
     if (!isValidEmail(data.email)) {
@@ -83,6 +88,13 @@ export class AuthService {
     return user;
   }
 
+  /**
+   * Sends a verification email to the user.
+   * @param userId User ID
+   * @param email User email
+   * @param name User name
+   * @returns The created EmailVerificationToken
+   */
   async sendVerificationEmail(userId: string, email: string, name: string): Promise<EmailVerificationToken> {
     // Delete any existing verification tokens for this user
     await this.emailVerificationTokenRepository.deleteByUserId(userId);
@@ -110,6 +122,10 @@ export class AuthService {
     return verificationToken;
   }
 
+  /**
+   * Verifies a user's email using a token.
+   * @param token Verification token
+   */
   async verifyEmail(token: string): Promise<void> {
     const verificationToken = await this.emailVerificationTokenRepository.findByToken(token);
     if (!verificationToken) {
@@ -131,6 +147,11 @@ export class AuthService {
     await this.emailVerificationTokenRepository.markAsUsed(verificationToken.id);
   }
 
+  /**
+   * Authenticates a user with email and password.
+   * @param data Login details
+   * @returns User object, 2FA requirement info, or null if invalid
+   */
   async login(data: LoginData): Promise<User | { requires2FA: true; userId: string } | null> {
     if (!isValidEmail(data.email)) {
       throw new ValidationError('Invalid email format');
@@ -154,6 +175,12 @@ export class AuthService {
     return user;
   }
 
+  /**
+   * Verifies a 2FA token during login.
+   * @param userId User ID
+   * @param token 2FA token or backup code
+   * @returns User object if verified, else null
+   */
   async verifyLoginWith2FA(userId: string, token: string): Promise<User | null> {
     const user = await this.userRepository.findById(userId);
     if (!user || !user.twoFactorEnabled || !user.twoFactorSecret) {
@@ -181,6 +208,11 @@ export class AuthService {
     return user;
   }
 
+  /**
+   * Generates 2FA setup details (secret and QR code).
+   * @param userId User ID
+   * @returns Object containing base32 secret and QR code data URL
+   */
   async setup2FA(userId: string): Promise<{ secret: string; dataUrl: string }> {
     const user = await this.userRepository.findById(userId);
     if (!user) {
@@ -207,6 +239,12 @@ export class AuthService {
     };
   }
 
+  /**
+   * Enables 2FA for a user after verifying the setup token.
+   * @param userId User ID
+   * @param token 2FA setup verification token
+   * @returns Newly generated backup codes
+   */
   async enable2FA(userId: string, token: string): Promise<string[]> {
     const user = await this.userRepository.findById(userId);
     if (!user) {
@@ -241,6 +279,11 @@ export class AuthService {
     return backupCodes;
   }
 
+  /**
+   * Disables 2FA for a user.
+   * @param userId User ID
+   * @param password User password for confirmation
+   */
   async disable2FA(userId: string, password: string): Promise<void> {
     const user = await this.userRepository.findById(userId);
     if (!user) {
@@ -265,6 +308,11 @@ export class AuthService {
     });
   }
 
+  /**
+   * Regenerates backup codes for a user with 2FA enabled.
+   * @param userId User ID
+   * @returns Newly generated backup codes
+   */
   async regenerateBackupCodes(userId: string): Promise<string[]> {
     const user = await this.userRepository.findById(userId);
     if (!user) {
@@ -286,6 +334,11 @@ export class AuthService {
     return backupCodes;
   }
 
+  /**
+   * Initiates the password reset process by sending an email.
+   * @param email User email
+   * @returns The created PasswordResetToken
+   */
   async requestPasswordReset(email: string): Promise<PasswordResetToken> {
     if (!isValidEmail(email)) {
       throw new ValidationError('Invalid email format');
@@ -323,6 +376,11 @@ export class AuthService {
     return resetToken;
   }
 
+  /**
+   * Resets a user's password using a valid reset token.
+   * @param token Password reset token
+   * @param newPassword New password
+   */
   async resetPassword(token: string, newPassword: string): Promise<void> {
     const passwordValidation = isValidPassword(newPassword);
     if (!passwordValidation.valid) {
