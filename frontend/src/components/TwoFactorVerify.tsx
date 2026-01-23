@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { apiService } from '../services/api'
-import type { LoginResponse } from '../services/api'
+import type { LoginResponse } from '../types/auth'
 import { getErrorMessage } from '../utils/errorMessages'
 import './TwoFactorVerify.css'
 

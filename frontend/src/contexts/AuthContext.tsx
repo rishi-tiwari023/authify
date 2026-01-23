@@ -1,7 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import type { ReactNode } from 'react'
 import { apiService } from '../services/api'
-import type { User } from '../services/api'
+import type { User } from '../types/auth'
 
 interface UpdateProfilePayload {
   name?: string

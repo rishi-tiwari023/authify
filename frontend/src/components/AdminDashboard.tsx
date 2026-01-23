@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { apiService, type User } from '../services/api'
+import { apiService } from '../services/api'
+import type { User } from '../types/auth'
 import { getErrorMessage } from '../utils/errorMessages'
 import Loading from './Loading'
 import './Login.css'
