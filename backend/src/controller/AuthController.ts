@@ -12,7 +12,6 @@ import { UserService } from '../service/UserService';
 import { ActivityLogService } from '../service/ActivityLogService';
 import { safeLogActivity } from '../utils/activityLogger';
 import { handleControllerError } from '../utils/controller';
-
 import { TokenService } from '../service/TokenService';
 import { TokenPayload } from '../types/auth';
 

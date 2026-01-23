@@ -56,6 +56,7 @@ jest.mock('../../repository/UserRepository', () => {
         role?: UserRole;
         emailVerified?: boolean;
         profileUrl?: string | null;
+        isBanned?: boolean;
         createdAt?: Date;
         updatedAt?: Date;
         twoFactorEnabled?: boolean;
@@ -70,6 +71,7 @@ jest.mock('../../repository/UserRepository', () => {
           role: data.role ?? UserRole.USER,
           emailVerified: data.emailVerified ?? false,
           profileUrl: data.profileUrl ?? null,
+          isBanned: data.isBanned ?? false,
           createdAt: data.createdAt ?? new Date(),
           updatedAt: data.updatedAt ?? new Date(),
           twoFactorEnabled: data.twoFactorEnabled ?? false,
@@ -83,6 +85,7 @@ jest.mock('../../repository/UserRepository', () => {
               role: this.role,
               profileUrl: this.profileUrl,
               emailVerified: this.emailVerified,
+              isBanned: this.isBanned,
               createdAt: this.createdAt,
               updatedAt: this.updatedAt,
               twoFactorEnabled: this.twoFactorEnabled,
@@ -394,7 +397,7 @@ describe('Integration: Auth and Password Reset flows', () => {
       asExpressResponse(refreshRes)
     );
 
-    expect(refreshRes.status).toHaveBeenCalledWith(500);
+    expect(refreshRes.status).toHaveBeenCalledWith(401);
   });
 
   it('supports full 2FA setup and login flow', async () => {

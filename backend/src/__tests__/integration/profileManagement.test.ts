@@ -73,6 +73,7 @@ jest.mock('../../repository/UserRepository', () => {
         role?: UserRole;
         emailVerified?: boolean;
         profileUrl?: string | null;
+        isBanned?: boolean;
         createdAt?: Date;
         updatedAt?: Date;
       }) {
@@ -83,6 +84,7 @@ jest.mock('../../repository/UserRepository', () => {
           password: data.password,
           role: data.role ?? UserRole.USER,
           emailVerified: data.emailVerified ?? false,
+          isBanned: data.isBanned ?? false,
           twoFactorEnabled: false,
           profileUrl: data.profileUrl ?? null,
           createdAt: data.createdAt ?? new Date(),
@@ -96,6 +98,7 @@ jest.mock('../../repository/UserRepository', () => {
               profileUrl: this.profileUrl,
               emailVerified: this.emailVerified,
               twoFactorEnabled: this.twoFactorEnabled,
+              isBanned: this.isBanned,
               createdAt: this.createdAt,
               updatedAt: this.updatedAt,
             };
