@@ -13,57 +13,49 @@ import { ActivityLogService } from '../service/ActivityLogService';
 import { safeLogActivity } from '../utils/activityLogger';
 import { handleControllerError } from '../utils/controller';
 
+import { TokenService } from '../service/TokenService';
+import { TokenPayload } from '../types/auth';
+
 export class AuthController {
   private authService: AuthService;
-  private readonly jwtSecret: Secret;
-  private readonly jwtExpiresIn: SignOptions['expiresIn'];
-  private readonly refreshSecret: Secret;
-  private readonly refreshExpiresIn: SignOptions['expiresIn'];
+  private tokenService: TokenService;
   private userRepository: UserRepository;
   private userService: UserService;
   private activityLogService: ActivityLogService;
 
   constructor() {
     this.authService = new AuthService();
-    const accessSecret = process.env.JWT_SECRET;
-    const refreshSecret = process.env.REFRESH_TOKEN_SECRET;
-
-    if (!accessSecret) {
-      throw new Error('JWT_SECRET is not configured');
-    }
-    if (!refreshSecret) {
-      throw new Error('REFRESH_TOKEN_SECRET is not configured');
-    }
-
-    this.jwtSecret = accessSecret;
-    this.jwtExpiresIn = (process.env.JWT_EXPIRATION || '15m') as SignOptions['expiresIn'];
-    this.refreshSecret = refreshSecret;
-    this.refreshExpiresIn = (process.env.REFRESH_TOKEN_EXPIRATION || '7d') as SignOptions['expiresIn'];
+    this.tokenService = new TokenService();
     this.userRepository = new UserRepository();
     this.userService = new UserService();
     this.activityLogService = new ActivityLogService();
   }
 
-  private signToken(user: { id: string; email: string; role: string }) {
-    const signOptions: SignOptions = { expiresIn: this.jwtExpiresIn };
-
-    return jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
-      this.jwtSecret,
-      signOptions
-    );
+  /**
+   * Generates a signed access token for the user.
+   * @param user User data for the token payload
+   * @returns Signed JWT access token
+   * @private
+   */
+  private signToken(user: TokenPayload) {
+    return this.tokenService.signAccessToken(user);
   }
 
-  private signRefreshToken(user: { id: string; email: string; role: string }) {
-    const signOptions: SignOptions = { expiresIn: this.refreshExpiresIn };
-
-    return jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
-      this.refreshSecret,
-      signOptions
-    );
+  /**
+   * Generates a signed refresh token for the user.
+   * @param user User data for the token payload
+   * @returns Signed JWT refresh token
+   * @private
+   */
+  private signRefreshToken(user: TokenPayload) {
+    return this.tokenService.signRefreshToken(user);
   }
 
+  /**
+   * Handles user registration.
+   * @param req Express request containing name, email, and password
+   * @param res Express response
+   */
   async signup(req: Request, res: Response): Promise<void> {
     try {
       const { name, email, password } = req.body;
@@ -93,6 +85,11 @@ export class AuthController {
     }
   }
 
+  /**
+   * Handles user login and 2FA check.
+   * @param req Express request containing email and password
+   * @param res Express response
+   */
   async login(req: Request, res: Response): Promise<void> {
     try {
       const { email, password } = req.body;
@@ -150,6 +147,11 @@ export class AuthController {
     }
   }
 
+  /**
+   * Initiates 2FA setup for a user.
+   * @param req Authenticated request
+   * @param res Express response
+   */
   async setup2FA(req: AuthRequest, res: Response): Promise<void> {
     try {
       if (!req.user) {
@@ -175,6 +177,11 @@ export class AuthController {
     }
   }
 
+  /**
+   * Finalizes 2FA enablement by verifying the first token.
+   * @param req Authenticated request with token
+   * @param res Express response
+   */
   async enable2FA(req: AuthRequest, res: Response): Promise<void> {
     try {
       if (!req.user) {
@@ -206,6 +213,11 @@ export class AuthController {
     }
   }
 
+  /**
+   * Verifies 2FA token during login flow.
+   * @param req Request containing userId and token
+   * @param res Express response
+   */
   async verify2FA(req: Request, res: Response): Promise<void> {
     try {
       const { userId, token } = req.body;
@@ -241,6 +253,11 @@ export class AuthController {
     }
   }
 
+  /**
+   * Disables 2FA for the authenticated user.
+   * @param req Authenticated request with password
+   * @param res Express response
+   */
   async disable2FA(req: AuthRequest, res: Response): Promise<void> {
     try {
       if (!req.user) {
@@ -272,6 +289,11 @@ export class AuthController {
     }
   }
 
+  /**
+   * Regenerates backup codes for 2FA.
+   * @param req Authenticated request with password
+   * @param res Express response
+   */
   async regenerateBackupCodes(req: AuthRequest, res: Response): Promise<void> {
     try {
       if (!req.user) {
@@ -315,6 +337,11 @@ export class AuthController {
     }
   }
 
+  /**
+   * Returns current authenticated user details.
+   * @param req Authenticated request
+   * @param res Express response
+   */
   async me(req: AuthRequest, res: Response): Promise<void> {
     if (!req.user) {
       res.status(401).json({ error: 'Authentication required' });
@@ -328,6 +355,11 @@ export class AuthController {
     res.json(user.toSafeJSON());
   }
 
+  /**
+   * Lists users with pagination and filtering (Admin only).
+   * @param req Request with query params for paging/filtering
+   * @param res Express response
+   */
   async listUsers(req: Request, res: Response): Promise<void> {
     try {
       const page = Math.max(parseInt(req.query.page as string, 10) || 1, 1);
@@ -342,6 +374,11 @@ export class AuthController {
     }
   }
 
+  /**
+   * Updates a user's role (Admin only).
+   * @param req Authenticated request with role in body
+   * @param res Express response
+   */
   async updateUserRole(req: AuthRequest, res: Response): Promise<void> {
     try {
       if (!req.user) {
@@ -373,6 +410,11 @@ export class AuthController {
     }
   }
 
+  /**
+   * Deletes a user (Admin only).
+   * @param req Authenticated request with userId param
+   * @param res Express response
+   */
   async deleteUser(req: AuthRequest, res: Response): Promise<void> {
     try {
       if (!req.user) {
@@ -408,12 +450,17 @@ export class AuthController {
     }
   }
 
+  /**
+   * Refreshes access token using a valid refresh token.
+   * @param req Request with refreshToken in body
+   * @param res Express response
+   */
   async refreshToken(req: Request<unknown, unknown, RefreshTokenInput>, res: Response): Promise<void> {
     try {
       const { refreshToken } = req.body;
 
-      const decoded = jwt.verify(refreshToken, this.refreshSecret) as jwt.JwtPayload;
-      const userId = decoded?.id as string | undefined;
+      const decoded = this.tokenService.verifyRefreshToken(refreshToken);
+      const userId = decoded?.id;
 
       if (!userId) {
         res.status(401).json({ error: 'Invalid refresh token' });
@@ -439,6 +486,11 @@ export class AuthController {
     }
   }
 
+  /**
+   * Initiates password reset flow.
+   * @param req Request containing email
+   * @param res Express response
+   */
   async forgotPassword(req: Request, res: Response): Promise<void> {
     try {
       const { email } = req.body;
@@ -466,6 +518,11 @@ export class AuthController {
     }
   }
 
+  /**
+   * Resets password using token.
+   * @param req Request with token and newPassword
+   * @param res Express response
+   */
   async resetPassword(req: Request, res: Response): Promise<void> {
     try {
       const { token, newPassword } = req.body;
@@ -486,6 +543,11 @@ export class AuthController {
     }
   }
 
+  /**
+   * Verifies email using token.
+   * @param req Request with token
+   * @param res Express response
+   */
   async verifyEmail(req: Request, res: Response): Promise<void> {
     try {
       const { token } = req.body;
@@ -506,6 +568,11 @@ export class AuthController {
     }
   }
 
+  /**
+   * Resends verification email.
+   * @param req Authenticated request
+   * @param res Express response
+   */
   async resendVerificationEmail(req: AuthRequest, res: Response): Promise<void> {
     try {
       if (!req.user) {
