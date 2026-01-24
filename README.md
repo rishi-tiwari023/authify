@@ -16,6 +16,8 @@ Full-stack authentication demo showcasing signup, signin, and protected dashboar
 
 ## Prerequisites
 
+> 🚀 **Quick Start**: For a streamlined setup guide, check out <br> [Startup.md](Startup.md).
+
 Before you begin, ensure you have the following installed:
 
 - **Node.js** (v18 or higher)
