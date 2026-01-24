@@ -41,3 +41,11 @@ To further reduce failures caused by network timeouts (e.g., `ECONNRESET`), we h
 *   `fetch-retry-maxtimeout=60000` (60s): Maximum wait time.
 
 These settings combined with the fall-back command significantly reduce "flaky" build failures related to npm registry connectivity.
+
+### Lockfile Inspection
+If the CI fails with errors like `Cannot find module`, especially regarding platform-specific packages (e.g., `@rollup/rollup-linux-x64-gnu`), inspect `package-lock.json`.
+
+Ensure that optional dependencies for the target platform (Linux) are present in the lockfile. If missing, regenerate the lockfile:
+1.  Delete `package-lock.json` and `node_modules` locally.
+2.  Run `npm install`.
+3.  Commit the new `package-lock.json`.
