@@ -8,15 +8,11 @@ export default function VerifyEmail() {
     const token = searchParams.get('token')
     const navigate = useNavigate()
 
-    const [status, setStatus] = useState<'verifying' | 'success' | 'error'>('verifying')
-    const [message, setMessage] = useState('Verifying your email address...')
+    const [status, setStatus] = useState<'verifying' | 'success' | 'error'>(() => !token ? 'error' : 'verifying')
+    const [message, setMessage] = useState(() => !token ? 'Invalid verification link. No token provided.' : 'Verifying your email address...')
 
     useEffect(() => {
-        if (!token) {
-            setStatus('error')
-            setMessage('Invalid verification link. No token provided.')
-            return
-        }
+        if (!token) return
 
         const verify = async () => {
             try {

@@ -179,7 +179,7 @@ class ApiService {
           }
           return retryResponse.json()
         }
-      } catch (refreshError) {
+      } catch {
         this.logout()
         throw new Error('Session expired. Please log in again.')
       }

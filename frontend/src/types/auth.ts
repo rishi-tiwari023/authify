@@ -36,3 +36,21 @@ export interface LoginData {
     email: string
     password: string
 }
+
+export interface UpdateProfilePayload {
+    name?: string
+    email?: string
+    profileUrl?: string | null
+}
+
+export interface AuthContextType {
+    user: User | null
+    loading: boolean
+    login: (email: string, password: string) => Promise<{ requires2FA: boolean; userId?: string }>
+    verify2FA: (userId: string, token: string) => Promise<void>
+    signup: (name: string, email: string, password: string) => Promise<void>
+    logout: () => Promise<void>
+    isAuthenticated: boolean
+    refreshUser: () => Promise<void>
+    updateProfile: (data: UpdateProfilePayload) => Promise<void>
+}

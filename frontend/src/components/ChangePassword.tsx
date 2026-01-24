@@ -32,7 +32,7 @@ export default function ChangePassword({ onSuccess, onCancel }: ChangePasswordPr
     if (!/[0-9]/.test(password)) {
       return 'Password must contain at least one number'
     }
-    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+    if (!new RegExp('[!@#$%^&*()_+\\-=\\[\\]{};\':"\\\\|,.<>\\/?]').test(password)) {
       return 'Password must contain at least one special character'
     }
     return null

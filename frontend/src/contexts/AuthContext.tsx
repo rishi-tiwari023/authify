@@ -1,25 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import type { ReactNode } from 'react'
 import { apiService } from '../services/api'
-import type { User } from '../types/auth'
-
-interface UpdateProfilePayload {
-  name?: string
-  email?: string
-  profileUrl?: string | null
-}
-
-interface AuthContextType {
-  user: User | null
-  loading: boolean
-  login: (email: string, password: string) => Promise<{ requires2FA: boolean; userId?: string }>
-  verify2FA: (userId: string, token: string) => Promise<void>
-  signup: (name: string, email: string, password: string) => Promise<void>
-  logout: () => Promise<void>
-  isAuthenticated: boolean
-  refreshUser: () => Promise<void>
-  updateProfile: (data: UpdateProfilePayload) => Promise<void>
-}
+import type { User, AuthContextType, UpdateProfilePayload } from '../types/auth'
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
@@ -123,6 +105,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext)
   if (context === undefined) {
