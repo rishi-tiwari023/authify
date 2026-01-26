@@ -33,21 +33,23 @@ export class AuthController {
   /**
    * Generates a signed access token for the user.
    * @param user User data for the token payload
+   * @param rememberMe If true, extends token expiration for persistent sessions
    * @returns Signed JWT access token
    * @private
    */
-  private signToken(user: TokenPayload) {
-    return this.tokenService.signAccessToken(user);
+  private signToken(user: TokenPayload, rememberMe = false) {
+    return this.tokenService.signAccessToken(user, rememberMe);
   }
 
   /**
    * Generates a signed refresh token for the user.
    * @param user User data for the token payload
+   * @param rememberMe If true, extends token expiration for persistent sessions
    * @returns Signed JWT refresh token
    * @private
    */
-  private signRefreshToken(user: TokenPayload) {
-    return this.tokenService.signRefreshToken(user);
+  private signRefreshToken(user: TokenPayload, rememberMe = false) {
+    return this.tokenService.signRefreshToken(user, rememberMe);
   }
 
   /**
@@ -86,12 +88,12 @@ export class AuthController {
 
   /**
    * Handles user login and 2FA check.
-   * @param req Express request containing email and password
+   * @param req Express request containing email, password, and optional rememberMe
    * @param res Express response
    */
   async login(req: Request, res: Response): Promise<void> {
     try {
-      const { email, password } = req.body;
+      const { email, password, rememberMe = false } = req.body;
 
       if (!email || !password) {
         res.status(400).json({ error: 'Email and password required' });
@@ -114,7 +116,8 @@ export class AuthController {
 
         res.json({
           requires2FA: true,
-          userId: result.userId
+          userId: result.userId,
+          rememberMe // Pass rememberMe flag to frontend for 2FA flow
         });
         return;
       }
@@ -214,12 +217,12 @@ export class AuthController {
 
   /**
    * Verifies 2FA token during login flow.
-   * @param req Request containing userId and token
+   * @param req Request containing userId, token, and optional rememberMe
    * @param res Express response
    */
   async verify2FA(req: Request, res: Response): Promise<void> {
     try {
-      const { userId, token } = req.body;
+      const { userId, token, rememberMe = false } = req.body;
 
       if (!userId || !token) {
         res.status(400).json({ error: 'User ID and token are required' });
@@ -232,8 +235,8 @@ export class AuthController {
         return;
       }
 
-      const authToken = this.signToken({ id: user.id, email: user.email, role: user.role });
-      const refreshToken = this.signRefreshToken({ id: user.id, email: user.email, role: user.role });
+      const authToken = this.signToken({ id: user.id, email: user.email, role: user.role }, rememberMe);
+      const refreshToken = this.signRefreshToken({ id: user.id, email: user.email, role: user.role }, rememberMe);
 
       safeLogActivity(this.activityLogService, {
         userId: user.id,
