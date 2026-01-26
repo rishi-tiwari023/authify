@@ -10,11 +10,13 @@ import './Login.css'
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [rememberMe, setRememberMe] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [emailTouched, setEmailTouched] = useState(false)
   const [show2FA, setShow2FA] = useState(false)
   const [userIdFor2FA, setUserIdFor2FA] = useState<string>('')
+  const [rememberMeFor2FA, setRememberMeFor2FA] = useState(false)
   const { login } = useAuth()
   const navigate = useNavigate()
 
@@ -41,9 +43,10 @@ export default function Login() {
 
     setLoading(true)
     try {
-      const result = await login(email, password)
+      const result = await login(email, password, rememberMe)
       if (result.requires2FA && result.userId) {
         setUserIdFor2FA(result.userId)
+        setRememberMeFor2FA(result.rememberMe || rememberMe)
         setShow2FA(true)
       } else {
         navigate('/dashboard')
@@ -61,6 +64,7 @@ export default function Login() {
         <div className="auth-card">
           <TwoFactorVerify
             userId={userIdFor2FA}
+            rememberMe={rememberMeFor2FA}
             onSuccess={() => navigate('/dashboard')}
             onCancel={() => setShow2FA(false)}
           />
@@ -108,6 +112,20 @@ export default function Login() {
               disabled={loading}
               required
             />
+          </div>
+
+          <div className="form-group" style={{ marginBottom: '1rem' }}>
+            <label htmlFor="rememberMe" style={{ display: 'flex', alignItems: 'center', cursor: 'pointer', fontSize: '0.875rem' }}>
+              <input
+                id="rememberMe"
+                type="checkbox"
+                checked={rememberMe}
+                onChange={(event) => setRememberMe(event.target.checked)}
+                disabled={loading}
+                style={{ marginRight: '0.5rem', cursor: 'pointer' }}
+              />
+              Remember me for 30 days
+            </label>
           </div>
 
           <div style={{ textAlign: 'right', marginTop: '-0.5rem' }}>

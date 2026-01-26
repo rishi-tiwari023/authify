@@ -56,17 +56,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  const login = async (email: string, password: string): Promise<{ requires2FA: boolean; userId?: string }> => {
-    const response = await apiService.login({ email, password })
+  const login = async (email: string, password: string, rememberMe = false): Promise<{ requires2FA: boolean; userId?: string; rememberMe?: boolean }> => {
+    const response = await apiService.login({ email, password, rememberMe })
     if (response.requires2FA && response.userId) {
-      return { requires2FA: true, userId: response.userId }
+      return { requires2FA: true, userId: response.userId, rememberMe: response.rememberMe }
     }
     setUser(response.user)
     return { requires2FA: false }
   }
 
-  const verify2FA = async (userId: string, token: string) => {
-    const response = await apiService.verify2FA(userId, token)
+  const verify2FA = async (userId: string, token: string, rememberMe = false) => {
+    const response = await apiService.verify2FA(userId, token, rememberMe)
     setUser(response.user)
   }
 

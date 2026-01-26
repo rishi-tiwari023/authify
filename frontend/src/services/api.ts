@@ -223,7 +223,10 @@ class ApiService {
       body: JSON.stringify(data),
     })
 
-    this.setSession(response)
+    // Only set session if not 2FA required
+    if (!response.requires2FA) {
+      this.setSession(response)
+    }
     return response
   }
 
@@ -417,10 +420,10 @@ class ApiService {
   /**
    * Verifies 2FA token during login.
    */
-  async verify2FA(userId: string, token: string): Promise<LoginResponse> {
+  async verify2FA(userId: string, token: string, rememberMe = false): Promise<LoginResponse> {
     const response = await this.request<LoginResponse>('/auth/2fa/verify', {
       method: 'POST',
-      body: JSON.stringify({ userId, token }),
+      body: JSON.stringify({ userId, token, rememberMe }),
     })
 
     this.setSession(response)

@@ -6,11 +6,12 @@ import './TwoFactorVerify.css'
 
 interface TwoFactorVerifyProps {
     userId: string
+    rememberMe?: boolean
     onSuccess: (response: LoginResponse) => void
     onCancel: () => void
 }
 
-export default function TwoFactorVerify({ userId, onSuccess, onCancel }: TwoFactorVerifyProps) {
+export default function TwoFactorVerify({ userId, rememberMe = false, onSuccess, onCancel }: TwoFactorVerifyProps) {
     const [token, setToken] = useState('')
     const [isBackupMode, setIsBackupMode] = useState(false)
     const [loading, setLoading] = useState(false)
@@ -24,7 +25,7 @@ export default function TwoFactorVerify({ userId, onSuccess, onCancel }: TwoFact
         setError(null)
 
         try {
-            const response = await apiService.verify2FA(userId, token)
+            const response = await apiService.verify2FA(userId, token, rememberMe)
             onSuccess(response)
         } catch (err) {
             setError(getErrorMessage(err))

@@ -16,6 +16,7 @@ export interface LoginResponse {
     refreshToken?: string
     requires2FA?: boolean
     userId?: string
+    rememberMe?: boolean
 }
 
 export interface PaginatedResponse<T> {
@@ -35,6 +36,7 @@ export interface SignupData {
 export interface LoginData {
     email: string
     password: string
+    rememberMe?: boolean
 }
 
 export interface UpdateProfilePayload {
@@ -46,8 +48,8 @@ export interface UpdateProfilePayload {
 export interface AuthContextType {
     user: User | null
     loading: boolean
-    login: (email: string, password: string) => Promise<{ requires2FA: boolean; userId?: string }>
-    verify2FA: (userId: string, token: string) => Promise<void>
+    login: (email: string, password: string, rememberMe?: boolean) => Promise<{ requires2FA: boolean; userId?: string; rememberMe?: boolean }>
+    verify2FA: (userId: string, token: string, rememberMe?: boolean) => Promise<void>
     signup: (name: string, email: string, password: string) => Promise<void>
     logout: () => Promise<void>
     isAuthenticated: boolean
