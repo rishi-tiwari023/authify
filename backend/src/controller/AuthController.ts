@@ -340,6 +340,54 @@ export class AuthController {
   }
 
   /**
+   * Retrieves existing backup codes for the user.
+   * @param req Authenticated request with password
+   * @param res Express response
+   */
+  async getBackupCodes(req: AuthRequest, res: Response): Promise<void> {
+    try {
+      if (!req.user) {
+        res.status(401).json({ error: 'Authentication required' });
+        return;
+      }
+
+      const { password } = req.body;
+      if (!password) {
+        res.status(400).json({ error: 'Password is required' });
+        return;
+      }
+
+      const user = await this.userRepository.findById(req.user.id);
+      if (!user) {
+        res.status(404).json({ error: 'User not found' });
+        return;
+      }
+
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      if (!isPasswordValid) {
+        res.status(400).json({ error: 'Invalid password' });
+        return;
+      }
+
+      const backupCodes = await this.authService.getBackupCodes(req.user.id);
+
+      safeLogActivity(this.activityLogService, {
+        userId: req.user.id,
+        action: 'view_backup_codes',
+        req
+      });
+
+      res.json({ backupCodes });
+    } catch (error) {
+      if (error instanceof ValidationError || error instanceof NotFoundError) {
+        res.status(error.statusCode).json({ error: error.message });
+        return;
+      }
+      handleControllerError(res, error, 500, 'Failed to retrieve backup codes');
+    }
+  }
+
+  /**
    * Returns current authenticated user details.
    * @param req Authenticated request
    * @param res Express response

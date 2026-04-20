@@ -335,6 +335,24 @@ export class AuthService {
   }
 
   /**
+   * Retrieves existing backup codes for a user.
+   * @param userId User ID
+   * @returns Array of backup codes
+   */
+  async getBackupCodes(userId: string): Promise<string[]> {
+    const user = await this.userRepository.findById(userId);
+    if (!user) {
+      throw new NotFoundError('User not found');
+    }
+
+    if (!user.twoFactorEnabled) {
+      throw new ValidationError('2FA is not enabled');
+    }
+
+    return user.twoFactorBackupCodes || [];
+  }
+
+  /**
    * Initiates the password reset process by sending an email.
    * @param email User email
    * @returns The created PasswordResetToken

@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { apiService } from '../services/api'
 import type { LoginResponse } from '../types/auth'
 import { getErrorMessage } from '../utils/errorMessages'
+import { useAuth } from '../contexts/AuthContext'
 import { ShieldCheck } from 'lucide-react'
 import './TwoFactorVerify.css'
 
@@ -17,6 +17,7 @@ export default function TwoFactorVerify({ userId, rememberMe = false, onSuccess,
     const [isBackupMode, setIsBackupMode] = useState(false)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
+    const { verify2FA } = useAuth()
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -26,8 +27,8 @@ export default function TwoFactorVerify({ userId, rememberMe = false, onSuccess,
         setError(null)
 
         try {
-            const response = await apiService.verify2FA(userId, token, rememberMe)
-            onSuccess(response)
+            await verify2FA(userId, token, rememberMe)
+            onSuccess({} as any)
         } catch (err) {
             setError(getErrorMessage(err))
         } finally {

@@ -161,5 +161,14 @@ router.post('/2fa/disable', authMiddleware, validateBody(disable2FASchema), (req
  */
 router.post('/2fa/backup-codes', authMiddleware, validateBody(regenerateBackupCodesSchema), (req, res) => authController.regenerateBackupCodes(req as any, res));
 
+/**
+ * @route GET /api/auth/2fa/backup-codes
+ * @desc View existing backup codes
+ * @access Private (requires password confirmation)
+ * @header Authorization: Bearer <token>
+ * @body {string} password - Current password
+ */
+router.post('/2fa/backup-codes/view', authMiddleware, validateBody(regenerateBackupCodesSchema), (req, res) => authController.getBackupCodes(req as any, res));
+
 export default router;
 

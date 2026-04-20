@@ -115,8 +115,9 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(2, 6, 23, 0.85);
-    backdrop-filter: blur(8px);
+    background-color: rgba(2, 6, 23, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     display: flex;
     justify-content: center;
     align-items: center;
