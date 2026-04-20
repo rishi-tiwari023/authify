@@ -411,10 +411,11 @@ class ApiService {
    * Enables 2FA with token.
    */
   async enable2FA(token: string): Promise<string[]> {
-    return this.request<string[]>('/auth/2fa/enable', {
+    const response = await this.request<{ backupCodes: string[] }>('/auth/2fa/enable', {
       method: 'POST',
       body: JSON.stringify({ token }),
     })
+    return response.backupCodes
   }
 
   /**
@@ -443,10 +444,23 @@ class ApiService {
   /**
    * Regenerates backup codes.
    */
-  async regenerateBackupCodes(): Promise<string[]> {
-    return this.request<string[]>('/auth/2fa/backup-codes', {
+  async regenerateBackupCodes(password: string): Promise<string[]> {
+    const response = await this.request<{ backupCodes: string[] }>('/auth/2fa/backup-codes', {
       method: 'POST',
+      body: JSON.stringify({ password }),
     })
+    return response.backupCodes
+  }
+
+  /**
+   * Retrieves existing backup codes.
+   */
+  async getBackupCodes(password: string): Promise<string[]> {
+    const response = await this.request<{ backupCodes: string[] }>('/auth/2fa/backup-codes/view', {
+      method: 'POST',
+      body: JSON.stringify({ password }),
+    })
+    return response.backupCodes
   }
 }
 

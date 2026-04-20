@@ -43,18 +43,18 @@
 
 .code-input {
     font-family: 'SF Mono', 'Roboto Mono', monospace;
-    font-size: 2.5rem;
-    letter-spacing: 0.25em;
-    /* Reduced spacing to prevent overflow */
+    font-size: clamp(1.5rem, 8vw, 2.5rem);
+    letter-spacing: clamp(0.1em, 3vw, 0.25em);
     text-align: center;
     width: 100%;
     max-width: 320px;
-    padding: 1rem;
+    padding: 0.75rem;
     border: 2px solid rgba(148, 163, 184, 0.2);
     border-radius: 1rem;
     background: rgba(15, 23, 42, 0.6);
     color: #fff;
     transition: all 200ms ease;
+    box-sizing: border-box;
 }
 
 .code-input:focus {
@@ -99,7 +99,7 @@
 
 /* Specific styling for backup code text input */
 .code-input[type="text"] {
-    font-size: 1.75rem;
+    font-size: clamp(1.2rem, 5vw, 1.75rem);
     /* Smaller font for 8 chars */
-    letter-spacing: 0.15em;
+    letter-spacing: clamp(0.05em, 2vw, 0.15em);
 }
