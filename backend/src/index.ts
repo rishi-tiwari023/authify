@@ -118,13 +118,13 @@ async function bootstrap() {
   });
 
   app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-    console.log('✅ Database connected');
+    console.log(`Server running on http://localhost:${PORT}`);
+    console.log('Database connected');
   });
 }
 
 bootstrap().catch((err) => {
-  console.error('❌ Failed to start application', err);
+  console.error('Failed to start application', err);
   process.exit(1);
 });
 

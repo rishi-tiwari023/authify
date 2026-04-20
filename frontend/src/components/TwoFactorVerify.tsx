@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { apiService } from '../services/api'
 import type { LoginResponse } from '../types/auth'
 import { getErrorMessage } from '../utils/errorMessages'
+import { ShieldCheck } from 'lucide-react'
 import './TwoFactorVerify.css'
 
 interface TwoFactorVerifyProps {
@@ -43,7 +44,7 @@ export default function TwoFactorVerify({ userId, rememberMe = false, onSuccess,
     return (
         <div className="verify-2fa-container">
             <div className="verify-header">
-                <span className="verify-icon">🔐</span>
+                <span className="verify-icon"><ShieldCheck size={48} /></span>
                 <h3>Two-Factor Authentication</h3>
                 <p className="auth-subtitle">
                     {isBackupMode

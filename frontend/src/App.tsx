@@ -16,6 +16,7 @@ import TwoFactorSettings from './components/TwoFactorSettings'
 import ChangePassword from './components/ChangePassword'
 import AdminDashboard from './components/AdminDashboard'
 import { useAuth } from './contexts/AuthContext'
+import { Shield, Mail, Key, BarChart3 } from 'lucide-react'
 
 const stats = [
   { label: 'Active users', value: '—' },
@@ -27,22 +28,22 @@ const features = [
   {
     title: 'Secure by default',
     description: 'Rate limiting, sanitization, and layered defenses without extra code.',
-    icon: '🛡️',
+    icon: <Shield size={24} />,
   },
   {
     title: 'Password reset flows',
     description: 'Battle-tested reset flows with branded emails and expiring tokens.',
-    icon: '✉️',
+    icon: <Mail size={24} />,
   },
   {
     title: 'Role-based control',
     description: 'Admin/User segmentation baked in so you ship dashboards safely.',
-    icon: '🔑',
+    icon: <Key size={24} />,
   },
   {
     title: 'Observability hooks',
     description: 'Structured logging and metrics so incidents are traceable in minutes.',
-    icon: '📊',
+    icon: <BarChart3 size={24} />,
   },
 ]
 

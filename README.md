@@ -145,10 +145,12 @@ DB_NAME=authify            # Database name
 
 #### JWT Configuration
 ```env
-JWT_SECRET=your-secret-key           # Primary secret for JWT access tokens
-JWT_EXPIRATION=15m                   # Access token lifespan (e.g., 15m, 1h)
-REFRESH_TOKEN_SECRET=your-refresh-key # Secret for refresh token signing
-REFRESH_TOKEN_EXPIRATION=7d          # Refresh token lifespan (e.g., 7d, 30d)
+JWT_SECRET=your-secret-key                      # Primary secret for JWT access tokens
+JWT_EXPIRATION=15m                              # Access token lifespan (e.g., 15m, 1h)
+JWT_EXPIRATION_REMEMBER_ME=7d                   # Extended access token lifespan for "Remember Me" (e.g., 7d)
+REFRESH_TOKEN_SECRET=your-refresh-key           # Secret for refresh token signing
+REFRESH_TOKEN_EXPIRATION=7d                     # Refresh token lifespan (e.g., 7d, 30d)
+REFRESH_TOKEN_EXPIRATION_REMEMBER_ME=30d        # Extended refresh token lifespan for "Remember Me" (e.g., 30d)
 ```
 
 #### Security & CORS Configuration

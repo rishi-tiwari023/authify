@@ -4,6 +4,7 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { apiService } from '../services/api'
 import { getErrorMessage } from '../utils/errorMessages'
 import PasswordStrengthIndicator from './PasswordStrengthIndicator'
+import { CheckCircle, AlertCircle } from 'lucide-react'
 import './Login.css'
 
 export default function ResetPassword() {
@@ -142,12 +143,12 @@ export default function ResetPassword() {
               <div style={{ marginTop: '0.25rem' }}>
                 {newPassword === confirmPassword ? (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <span style={{ color: '#22c55e', fontSize: '0.75rem' }}>✓</span>
+                    <span style={{ color: '#22c55e', fontSize: '0.75rem', display: 'flex', alignItems: 'center' }}><CheckCircle size={14} /></span>
                     <span style={{ color: '#9ca3af', fontSize: '0.75rem' }}>Passwords match</span>
                   </div>
                 ) : (
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                    <span style={{ color: '#ef4444', fontSize: '0.75rem' }}>⚠</span>
+                    <span style={{ color: '#ef4444', fontSize: '0.75rem', display: 'flex', alignItems: 'center' }}><AlertCircle size={14} /></span>
                     <span style={{ color: '#f87171', fontSize: '0.75rem' }}>Passwords do not match</span>
                   </div>
                 )}

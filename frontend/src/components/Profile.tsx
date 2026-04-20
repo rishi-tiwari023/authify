@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { apiService } from '../services/api'
 import { getErrorMessage } from '../utils/errorMessages'
 import Loading from './Loading'
+import { Lock, ShieldCheck, AlertTriangle } from 'lucide-react'
 import './Login.css'
 
 export default function Profile() {
@@ -227,7 +228,7 @@ export default function Profile() {
                   e.currentTarget.style.transform = 'translateY(0)'
                 }}
               >
-                <span style={{ fontSize: '1.5rem' }}>🔐</span>
+                <span style={{ fontSize: '1.5rem', display: 'flex', alignItems: 'center' }}><Lock size={24} /></span>
                 <strong style={{ fontSize: '1rem' }}>Change Password</strong>
                 <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Update your secret credentials</span>
               </Link>
@@ -258,7 +259,7 @@ export default function Profile() {
                   e.currentTarget.style.transform = 'translateY(0)'
                 }}
               >
-                <span style={{ fontSize: '1.5rem' }}>🛡️</span>
+                <span style={{ fontSize: '1.5rem', display: 'flex', alignItems: 'center' }}><ShieldCheck size={24} /></span>
                 <strong style={{ fontSize: '1rem' }}>Two-Factor Auth</strong>
                 <span style={{ fontSize: '0.85rem', color: '#94a3b8' }}>Add an extra layer of security</span>
               </Link>
@@ -289,7 +290,7 @@ export default function Profile() {
                   e.currentTarget.style.transform = 'translateY(0)'
                 }}
               >
-                <span style={{ fontSize: '1.5rem' }}>⚠️</span>
+                <span style={{ fontSize: '1.5rem', display: 'flex', alignItems: 'center' }}><AlertTriangle size={24} /></span>
                 <strong style={{ fontSize: '1rem' }}>Delete Account</strong>
                 <span style={{ fontSize: '0.85rem', color: '#fca5a5', opacity: 0.8 }}>Permanently remove all data</span>
               </Link>
