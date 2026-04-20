@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import type { LoginResponse } from '../types/auth'
 import { getErrorMessage } from '../utils/errorMessages'
 import { useAuth } from '../contexts/AuthContext'
 import { ShieldCheck } from 'lucide-react'
@@ -8,7 +7,7 @@ import './TwoFactorVerify.css'
 interface TwoFactorVerifyProps {
     userId: string
     rememberMe?: boolean
-    onSuccess: (response: LoginResponse) => void
+    onSuccess: () => void
     onCancel: () => void
 }
 
@@ -28,7 +27,7 @@ export default function TwoFactorVerify({ userId, rememberMe = false, onSuccess,
 
         try {
             await verify2FA(userId, token, rememberMe)
-            onSuccess({} as any)
+            onSuccess()
         } catch (err) {
             setError(getErrorMessage(err))
         } finally {
