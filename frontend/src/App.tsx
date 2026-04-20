@@ -6,6 +6,7 @@ import Login from './components/Login'
 import Signup from './components/Signup'
 import Dashboard from './components/Dashboard'
 import ProtectedRoute from './components/ProtectedRoute'
+import PublicRoute from './components/PublicRoute'
 import AdminRoute from './components/AdminRoute'
 import ForgotPassword from './components/ForgotPassword'
 import ResetPassword from './components/ResetPassword'
@@ -66,10 +67,15 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/signup" element={<Signup />} />
-      <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
+      
+      {/* Guest only routes */}
+      <Route element={<PublicRoute />}>
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+      </Route>
+
       <Route path="/verify-email" element={<VerifyEmail />} />
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<Dashboard />} />
@@ -111,36 +117,44 @@ function LandingPage() {
           focus on roadmap work, not auth edge cases.
         </p>
         <div className="hero-actions">
-          <button className="primary" type="button" onClick={handleLaunchDemo}>Launch demo</button>
-          <a
-            href="https://github.com/rishi-tiwari023"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="ghost"
-            style={{
-              padding: '0.85rem 1.75rem',
-              borderRadius: '999px',
-              border: '1px solid rgba(226, 232, 240, 0.35)',
-              background: 'transparent',
-              color: '#e2e8f0',
-              textDecoration: 'none',
-              fontSize: '1rem',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'transform 200ms ease, opacity 200ms ease',
-              display: 'inline-block',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)'
-              e.currentTarget.style.opacity = '0.9'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)'
-              e.currentTarget.style.opacity = '1'
-            }}
-          >
-            View docs
-          </a>
+          {isAuthenticated ? (
+            <button className="primary" type="button" onClick={() => navigate('/dashboard')}>
+              Go to Dashboard
+            </button>
+          ) : (
+            <>
+              <button className="primary" type="button" onClick={handleLaunchDemo}>Launch demo</button>
+              <a
+                href="https://github.com/rishi-tiwari023/authify/blob/main/README.md"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ghost"
+                style={{
+                  padding: '0.85rem 1.75rem',
+                  borderRadius: '999px',
+                  border: '1px solid rgba(226, 232, 240, 0.35)',
+                  background: 'transparent',
+                  color: '#e2e8f0',
+                  textDecoration: 'none',
+                  fontSize: '1rem',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  transition: 'transform 200ms ease, opacity 200ms ease',
+                  display: 'inline-block',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)'
+                  e.currentTarget.style.opacity = '0.9'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)'
+                  e.currentTarget.style.opacity = '1'
+                }}
+              >
+                View docs
+              </a>
+            </>
+          )}
         </div>
         <div className="hero-stats">
           {stats.map((stat) => (
@@ -203,11 +217,11 @@ function LandingPage() {
           </div>
           <div className="trust-grid">
             <div>
-              <p className="stat-value">null</p>
+              <p className="stat-value">----</p>
               <p className="stat-label">Engineering teams onboarded</p>
             </div>
             <div>
-              <p className="stat-value">15ms</p>
+              <p className="stat-value">15ms </p>
               <p className="stat-label">Median token refresh</p>
             </div>
             <div>
